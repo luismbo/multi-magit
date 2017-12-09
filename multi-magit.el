@@ -15,6 +15,7 @@
 (require 'magit)
 (require 'magit-repos)
 (require 'magit-status)
+(require 'tabulated-list)
 
 (eval-when-compile
   (require 'cl))
@@ -41,6 +42,8 @@
 (easy-menu-define multi-magit-status-mode-menu multi-magit-status-mode-map
   "Multi-Magit menu"
   '("Multi-Magit"
+    ["List repositories" multi-magit-list-repositories t]
+    "---"
     ["Quit" magit-mode-bury-buffer t]
     ["Refresh" multi-magit-status t]))
 
@@ -92,7 +95,11 @@ merge-base betweenn HEAD and @{upstream}."
   (let ((repo (magit-toplevel directory)))
     (if (null repo)
         (user-error "multi-magit: couldn't find a repository here.")
-      (add-to-list 'multi-magit-selected-repositories repo t)
+      (setq multi-magit-selected-repositories
+            (cl-merge 'list
+                      (list repo)
+                      (copy-list multi-magit-selected-repositories)
+                      #'string<))
       (message "multi-magit: %s selected." repo))))
 
 (defun multi-magit-unselect-repository (&optional directory)
@@ -104,6 +111,116 @@ merge-base betweenn HEAD and @{upstream}."
       (setq multi-magit-selected-repositories
             (remove repo multi-magit-selected-repositories))
       (message "multi-magit: %s unselected." repo))))
+
+;;;; Select/unselect Repositories
+
+(defun multi-magit-repolist-column-status (_id)
+  "Insert letters if there are uncommitted changes.
+
+Show N if there is at least one untracked file.
+Show U if there is at least one unstaged file.
+Show S if there is at least one staged file."
+  (concat (if (magit-untracked-files) "N" "")
+          (if (magit-unstaged-files)  "U" "")
+          (if (magit-staged-files)    "S" "")))
+
+(defcustom multi-magit-repolist-columns
+  '(("Name"   25 magit-repolist-column-ident ())
+    ("Dirty"   5 multi-magit-repolist-column-status
+     ((:right-align t)
+      (:help-echo "N - untracked, U - unstaged, S - staged")))
+    ("Branch" 25 magit-repolist-column-branch ())
+    ("B>U"     3 magit-repolist-column-unpushed-to-upstream
+     ((:right-align t)
+      (:help-echo "Local changes not in upstream")))
+    ("Path"   99 magit-repolist-column-path ()))
+  "List of column displayed by `multi-magit-list-repositories'.
+
+Each element has the form (HEADER WIDTH FORMAT PROPS).
+
+HEADER is the string displayed in the header.  WIDTH is the width
+of the column.  FORMAT is a function that is called with one
+argument, the repository identification (usually its basename),
+and with `default-directory' bound to the toplevel of its working
+tree.  It has to return a string to be inserted or nil.  PROPS is
+an alist that supports the keys `:right-align' and `:pad-right'.
+Some entries also use `:help-echo', but `tabulated-list' does not
+actually support that yet."
+  :group 'multi-magit
+  :type `(repeat (list :tag "Column"
+                       (string   :tag "Header Label")
+                       (integer  :tag "Column Width")
+                       (function :tag "Inserter Function")
+                       (repeat   :tag "Properties"
+                                 (list (choice :tag "Property"
+                                               (const :right-align)
+                                               (const :pad-right)
+                                               (symbol))
+                                       (sexp   :tag "Value"))))))
+
+(defun multi-magit-repolist-toggle-repository ()
+  "Select or unselect DIRECTORY's repository."
+  (interactive)
+  (let* ((item (tabulated-list-get-id))
+         (repo (when item (magit-toplevel item))))
+    (cond ((null repo)
+           (user-error "There is no repository at point"))
+          ((member repo multi-magit-selected-repositories)
+           (multi-magit-unselect-repository repo)
+           (tabulated-list-put-tag " "))
+          (t
+           (multi-magit-select-repository repo)
+           (tabulated-list-put-tag "*")))))
+
+(defvar multi-magit-repolist-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map tabulated-list-mode-map)
+    (define-key map "g" 'multi-magit-list-repositories)
+    (define-key map (if (featurep 'jkl) [return] (kbd "C-m"))
+      'multi-magit-repolist-toggle-repository)
+    map)
+  "Local keymap for Multi-Magit-Repolist mode buffers.")
+
+(define-derived-mode multi-magit-repolist-mode magit-repolist-mode "Repos"
+  "Major mode for managing the list of selected Git repositories."
+  (setq tabulated-list-padding 2)
+  (tabulated-list-init-header))
+
+;;;###autoload
+(defun multi-magit-list-repositories ()
+  "Display a list of repositories for selection.
+
+Use the options `magit-repository-directories' and
+`magit-repository-directories-depth' to control which
+repositories are displayed."
+  (interactive)
+  (if magit-repository-directories
+      (with-current-buffer (get-buffer-create "*Multi-Magit Repositories*")
+        (let ((magit-repolist-columns multi-magit-repolist-columns))
+          (multi-magit-repolist-mode))
+        (setq tabulated-list-entries
+              (mapcar (-lambda ((id . path))
+                        (let ((default-directory path))
+                          (list path
+                                (vconcat (--map (or (funcall (nth 2 it) id) "")
+                                                multi-magit-repolist-columns)))))
+                      (magit-list-repos-uniquify
+                       (--map (cons (file-name-nondirectory (directory-file-name it))
+                                    it)
+                              (magit-list-repos)))))
+        (tabulated-list-print)
+        (save-excursion
+          (beginning-of-buffer)
+          (while (tabulated-list-get-id)
+            (when (member (magit-toplevel (tabulated-list-get-id))
+                          multi-magit-selected-repositories)
+              (tabulated-list-put-tag "*"))
+            (forward-line)))
+        (switch-to-buffer (current-buffer)))
+    (message "You need to customize `magit-repository-directories' %s"
+             "before you can list repositories")))
+
+;;;; Multi-Magit Status
 
 (defcustom multi-magit-status-sections-hook
   '(magit-insert-untracked-files
