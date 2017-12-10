@@ -236,14 +236,6 @@ repositories are displayed."
   "Face for repository headings."
   :group 'multi-magit-faces)
 
-(defface multi-magit-detached-head
-    '((((class color) (background light))
-       :inherit magit-branch-current :foreground "firebrick")
-      (((class color) (background  dark))
-       :inherit magit-branch-current :foreground "tomato"))
-  "Face for denoting a detached head."
-  :group 'multi-magit-faces)
-
 (defvar multi-magit-repo-header-section-map
   (let ((map (make-sparse-keymap)))
     (define-key map [return] 'magit-status)
@@ -251,14 +243,12 @@ repositories are displayed."
   "Keymap for repository headers.")
 
 (defun multi-magit--insert-repo-heading (repo-name)
-  (let* ((repo-string (propertize (format " %s " repo-name)
-                                  'face 'multi-magit-repo-heading))
-         (current-branch (magit-get-current-branch))
-         (branch-string (propertize (or current-branch "detached HEAD")
-                                    'face (if current-branch
-                                              'magit-branch-current
-                                              'multi-magit-detached-head))))
-    (magit-insert-heading (propertize (concat repo-string " " branch-string)
+  (let* ((repo (propertize (format " %s " repo-name)
+                           'face 'multi-magit-repo-heading))
+         (branch (--if-let (magit-get-current-branch)
+                     (propertize it 'face 'magit-branch-current)
+                   (propertize "(detached)" 'face 'warning))))
+    (magit-insert-heading (propertize (concat repo " " branch)
                                       'keymap
                                       multi-magit-repo-header-section-map))))
 
