@@ -39,3 +39,16 @@ We recommend binding it globally to <kbd>C-x G</kbd>:
 inserted for each repo. It accepts the same sections as
 `magit-status-sections-hook` but defaults to lightweight sections
 focused on giving you a quick overview of each repository.
+
+#### [section] multi-magit-insert-repos-overview
+
+Add this to `magit-status-sections-hook` to include a one-line
+overview for each selected repository showing the repository name, the
+current branch and quick status showing a untracked/staged/unstaged
+file count.
+
+```elisp
+(magit-add-section-hook 'magit-status-sections-hook
+                        'multi-magit-insert-repos-overview
+                         nil t)
+```
