@@ -50,7 +50,8 @@
 (defun multi-magit--find-current-section ()
   (save-excursion
     (while (and (or (null (magit-current-section))
-                    (eq 'toplevel (magit-section-type (magit-current-section))))
+                    (eq 'multi-magit-toplevel
+                        (magit-section-type (magit-current-section))))
                 (not (eql -1 (forward-line -1)))))
     (magit-current-section)))
 
@@ -322,12 +323,12 @@ repositories are displayed."
       (magit-display-buffer buffer)
       (with-current-buffer buffer
         (save-excursion
-          (magit-insert-section (toplevel)
+          (magit-insert-section (multi-magit-toplevel)
             (cl-loop for repo in multi-magit-selected-repositories
                      for repo-name in (multi-magit--selected-repo-names)
                      do (let ((default-directory repo)
                               (magit--default-directory repo))
-                          (magit-insert-section (status repo)
+                          (magit-insert-section (multi-magit-status repo)
                             (multi-magit--insert-repo-heading repo-name)
                             (insert "\n")
                             (magit-run-section-hook 'multi-magit-status-sections-hook))))))
