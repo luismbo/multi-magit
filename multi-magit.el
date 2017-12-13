@@ -407,7 +407,9 @@ repositories are displayed."
 (defun multi-magit-status ()
   (interactive)
   (if (null multi-magit-selected-repositories)
-      (user-error "multi-magit: no selected repositories. Select some using `multi-magit-select-repository'.")
+      (when (y-or-n-p "`multi-magit-selected-repositories' is empty. Would you \
+like to select some using `multi-magit-list-repositories'? ")
+        (multi-magit-list-repositories))
     (let ((buffer (get-buffer-create multi-magit-status-buffer-name))
           (inhibit-read-only t))
       (with-current-buffer buffer
