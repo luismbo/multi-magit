@@ -32,7 +32,7 @@ Like `magit-status` but aggregates all of the
 We recommend binding it globally to <kbd>C-x G</kbd>:
 
 ```elisp
-(global-set-key (kbd "C-x g") 'magit-status)
+(global-set-key (kbd "C-x G") 'multi-magit-status)
 ```
 
 `multi-magit-status-sections-hook` determines which sections will be
