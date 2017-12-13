@@ -13,15 +13,12 @@ operate on. You can easily select and unselect repositories using
 #### [command] multi-magit-list-repositories
 
 Similar to `magit-list-repositories` but lets you select/unselect
-repositories using <kbd>RET</kbd> (the Return or Enter key, in Emacs
-parlance).
+repositories using <kbd>RET</kbd>.
 
 The format of this listing is controlled via
 `multi-magit-repolist-columns` custom variable, which has the same
-format as `magit-repolist-columns`.
-
-`magit-repository-directories` and
-`magit-repository-directories-depth` to control which repositories
+format as `magit-repolist-columns`. Use `magit-repository-directories`
+and `magit-repository-directories-depth` to control which repositories
 will be listed.
 
 #### [command] multi-magit-status
