@@ -114,7 +114,11 @@ merge-base betweenn HEAD and @{upstream}."
 
 ;;;; Multi-repository Commands
 
-(defvar multi-magit-process-buffer-name "*Multi-Magit process")
+(defvar multi-magit-record-process-setup nil)
+(defvar multi-magit-pending-process-sections nil)
+
+(defun multi-magit-process-buffer ()
+  (get-buffer-create "*multi-magit-process"))
 
 (defun multi-magit--after-magit-process-finish (arg &optional process-buf
                                                     _command-buf _default-dir
@@ -124,32 +128,67 @@ merge-base betweenn HEAD and @{upstream}."
     (setq section     (process-get arg 'section))
     (setq arg         (process-exit-status arg)))
   (when (and section (bufferp process-buf))
-    (let ((repo-name (with-current-buffer process-buf
-                       (file-name-nondirectory
-                        (directory-file-name default-directory)))))
-      (with-current-buffer (or (get-buffer multi-magit-process-buffer-name)
-                               (error "Multi-magit process buffer not found"))
-        (let ((inhibit-read-only t))
-          (insert (propertize (concat "[" repo-name "]")
-                              'face (if (= arg 0)
-                                        'magit-process-ok
-                                      'magit-process-ng)))
-          (insert-buffer-substring process-buf
-                                   (magit-section-start section)
-                                   (magit-section-end section)))))))
+    (with-current-buffer (multi-magit-process-buffer)
+      (let ((inhibit-read-only t)
+            (target-section (cdr (assq section multi-magit-pending-process-sections))))
+        (when target-section
+          (let ((repo-name (with-current-buffer process-buf
+                             (file-name-nondirectory
+                              (directory-file-name default-directory)))))
+            (setq multi-magit-pending-process-sections
+                  (delq section multi-magit-pending-process-sections))
+            (save-excursion
+              (goto-char (magit-section-start target-section))
+              ;; 1+ at the end because we've inserted an extra
+              ;; newline in `multi-magit--around-magit-process-setup'.
+              (delete-region (magit-section-start target-section)
+                             (1+ (magit-section-end target-section)))
+              (insert (propertize (concat "[" repo-name "]")
+                                  'face (if (= arg 0)
+                                            'magit-process-ok
+                                          'magit-process-ng)))
+              (insert-buffer-substring process-buf
+                                       (magit-section-start section)
+                                       (magit-section-end section)))))))))
+
+(advice-add 'magit-process-finish :after
+            #'multi-magit--after-magit-process-finish)
+
+(defun multi-magit--around-magit-process-setup (original-function program args)
+  (let ((result (funcall original-function program args)))
+    (when multi-magit-record-process-setup
+      (let ((section (cdr result)))
+        (assert (magit-section-p section))
+        (push (cons section
+                    (with-current-buffer (multi-magit-process-buffer)
+                      (let ((inhibit-read-only t))
+                        (goto-char (point-max))
+                        ;; `magit-process-insert-section' jumps to (1-
+                        ;; (point-max)) for some reason and this gives
+                        ;; us trouble. This is probably not the right
+                        ;; fix.
+                        (insert "\n"))
+                      (prog1 (magit-process-insert-section
+                              default-directory program args
+                              nil nil)
+                        (backward-char 1))))
+              multi-magit-pending-process-sections)))
+    result))
+
+(advice-add 'magit-process-setup
+            :around
+            #'multi-magit--around-magit-process-setup)
 
 (defun call-with-multi-magit-process (fn)
-  (let ((buffer (get-buffer-create multi-magit-process-buffer-name)))
+  (let ((buffer (multi-magit-process-buffer)))
     (with-current-buffer buffer
       (let ((inhibit-read-only t))
         (setq default-directory (temporary-file-directory)) ; HACK
         (erase-buffer)
         (magit-process-mode)))
-    (advice-add 'magit-process-finish :after
-                #'multi-magit--after-magit-process-finish)
-    (unwind-protect (funcall fn)
-      (advice-remove 'magit-process-finish
-                     #'multi-magit--after-magit-process-finish))
+    (let ((multi-magit-record-process-setup t)
+          (magit-process-popup-time -1))
+      (funcall fn))
     (magit-display-buffer buffer)))
 
 (defmacro with-multi-magit-process (&rest body)
@@ -174,19 +213,19 @@ merge-base betweenn HEAD and @{upstream}."
             (inhibit-message t))
         (magit-checkout branch)))))
 
-;;; FIXME: this should be asynchronous, but that would require an
-;;; alternative approach to `multi-magit--after-magit-process-finish'.
 (defun multi-magit--shell-command (command)
   (with-multi-magit-process
     (dolist (repo multi-magit-selected-repositories)
       (let ((default-directory repo)
             (inhibit-message t)
             (process-environment process-environment))
-        (push "GIT_PAGER=cat" process-environment)
-        (magit-call-process shell-file-name shell-command-switch command)))))
+        (with-current-buffer (magit-process-buffer t)
+          (push "GIT_PAGER=cat" process-environment)
+          (magit-start-process shell-file-name nil
+                               shell-command-switch command))))))
 
 (defun multi-magit-git-command (command)
-  "Execute COMMAND synchronously for each selected repository.
+  "Execute COMMAND asynchronously for each selected repository.
 
 Interactively, prompt for COMMAND in the minibuffer. \"git \" is
 used as initial input, but can be deleted to run another command.
@@ -198,7 +237,7 @@ COMMAND is run in the top-level directory of each repository."
   (multi-magit--shell-command command))
 
 (defun multi-magit-shell-command (command)
-  "Execute COMMAND synchronously for each selected repository.
+  "Execute COMMAND asynchronously for each selected repository.
 
 Interactively, prompt for COMMAND in the minibuffer. COMMAND is
 run in the top-level directory of each repository."
