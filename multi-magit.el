@@ -403,6 +403,13 @@ repositories are displayed."
             :around
             'multi-magit--around-magit-mode-get-buffers)
 
+(defun multi-magit--maybe-refresh ()
+  (--when-let (and (member default-directory multi-magit-selected-repositories)
+                   (get-buffer multi-magit-status-buffer-name))
+    (multi-magit--refresh-status it)))
+
+(add-hook 'magit-post-refresh-hook 'multi-magit--maybe-refresh)
+
 (defun multi-magit--set-current-repo ()
   (let ((repo (or (multi-magit--current-repo)
                   (first multi-magit-selected-repositories))))
@@ -442,6 +449,23 @@ repositories are displayed."
     (--map (cdr (assoc it repo->name))
            multi-magit-selected-repositories)))
 
+(defun multi-magit--refresh-status (buffer)
+  (with-current-buffer buffer
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (multi-magit--set-current-repo)
+      (multi-magit-status-mode)
+      (save-excursion
+        (magit-insert-section (multi-magit-toplevel)
+          (cl-loop for repo in multi-magit-selected-repositories
+                   for repo-name in (multi-magit--selected-repo-names)
+                   do (let ((default-directory repo)
+                            (magit--default-directory repo))
+                        (magit-insert-section (multi-magit-status repo)
+                          (multi-magit--insert-repo-heading repo-name)
+                          (insert "\n")
+                          (magit-run-section-hook 'multi-magit-status-sections-hook)))))))))
+
 ;;;###autoload
 (defun multi-magit-status ()
   (interactive)
@@ -449,25 +473,11 @@ repositories are displayed."
       (when (y-or-n-p "`multi-magit-selected-repositories' is empty. Would you \
 like to select some using `multi-magit-list-repositories'? ")
         (multi-magit-list-repositories))
-    (let ((buffer (get-buffer-create multi-magit-status-buffer-name))
-          (inhibit-read-only t))
+    (let ((buffer (get-buffer-create multi-magit-status-buffer-name)))
+      (multi-magit--refresh-status buffer)
       (with-current-buffer buffer
-        (erase-buffer)
-        (multi-magit--set-current-repo)
-        (multi-magit-status-mode))
-      (magit-display-buffer buffer)
-      (with-current-buffer buffer
-        (save-excursion
-          (magit-insert-section (multi-magit-toplevel)
-            (cl-loop for repo in multi-magit-selected-repositories
-                     for repo-name in (multi-magit--selected-repo-names)
-                     do (let ((default-directory repo)
-                              (magit--default-directory repo))
-                          (magit-insert-section (multi-magit-status repo)
-                            (multi-magit--insert-repo-heading repo-name)
-                            (insert "\n")
-                            (magit-run-section-hook 'multi-magit-status-sections-hook))))))
-        (add-hook 'post-command-hook 'multi-magit--set-current-repo nil :local)))))
+        (add-hook 'post-command-hook 'multi-magit--set-current-repo nil :local))
+      (magit-display-buffer buffer))))
 
 ;;;; Magit-status Sections
 
