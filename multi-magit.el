@@ -16,9 +16,7 @@
 (require 'magit-repos)
 (require 'magit-status)
 (require 'tabulated-list)
-
-(eval-when-compile
-  (require 'cl))
+(require 'cl-lib)
 
 (defgroup multi-magit nil
   "Controlling multiple repositories using Magit."
