@@ -16,6 +16,7 @@
 (require 'magit-repos)
 (require 'magit-status)
 (require 'tabulated-list)
+(require 'dash)
 (require 'cl-lib)
 
 (defgroup multi-magit nil
@@ -156,12 +157,10 @@ merge-base betweenn HEAD and @{upstream}."
   `(call-with-multi-magit-process (lambda () ,@body)))
 
 (defun multi-magit-list-common-branches ()
-  (cl-reduce (lambda (x1 x2)
-               (cl-intersection x1 x2 :test #'string=))
-             (mapcar (lambda (repo)
-                       (let ((default-directory repo))
-                         (magit-list-refs "refs/heads/" "%(refname:short)")))
-                     multi-magit-selected-repositories)))
+  (--reduce (-intersection acc it)
+            (--map (let ((default-directory it))
+                     (magit-list-refs "refs/heads/" "%(refname:short)"))
+                   multi-magit-selected-repositories)))
 
 (defun multi-magit-checkout (branch)
   "Checkout BRANCH for each selected repository."
