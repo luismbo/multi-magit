@@ -113,6 +113,70 @@ merge-base betweenn HEAD and @{upstream}."
             (remove repo multi-magit-selected-repositories))
       (message "multi-magit: %s unselected." repo))))
 
+;;;; Multi-repository Commands
+
+(defvar multi-magit-process-buffer-name "*Multi-Magit process")
+
+(defun multi-magit--after-magit-process-finish (arg &optional process-buf
+                                                    command-buf default-dir
+                                                    section)
+  (unless (integerp arg)
+    (setq process-buf (process-buffer arg))
+    (setq section     (process-get arg 'section))
+    (setq arg         (process-exit-status arg)))
+  (when (and section (bufferp process-buf))
+    (let ((repo-name (with-current-buffer process-buf
+                       (file-name-nondirectory
+                        (directory-file-name default-directory)))))
+      (with-current-buffer (or (get-buffer multi-magit-process-buffer-name)
+                               (error "Multi-magit process buffer not found"))
+        (let ((inhibit-read-only t))
+          (insert (propertize (concat "[" repo-name "]")
+                              'face (if (= arg 0)
+                                        'magit-process-ok
+                                      'magit-process-ng)))
+          (insert-buffer-substring process-buf
+                                   (magit-section-start section)
+                                   (magit-section-end section)))))))
+
+(defun call-with-multi-magit-process (fn)
+  (let ((buffer (get-buffer-create multi-magit-process-buffer-name)))
+    (with-current-buffer buffer
+      (let ((inhibit-read-only t))
+        (setq default-directory "/") ; HACK
+        (erase-buffer)
+        (magit-process-mode)))
+    (advice-add 'magit-process-finish :after
+                #'multi-magit--after-magit-process-finish)
+    (unwind-protect (funcall fn)
+      (advice-remove 'magit-process-finish
+                     #'multi-magit--after-magit-process-finish))
+    (magit-display-buffer buffer)))
+
+(defmacro with-multi-magit-process (&rest body)
+  (declare (indent defun) (debug (body)))
+  `(call-with-multi-magit-process (lambda () ,@body)))
+
+(defun multi-magit-list-common-branches ()
+  (cl-reduce (lambda (x1 x2)
+               (cl-intersection x1 x2 :test #'string=))
+             (mapcar (lambda (repo)
+                       (let ((default-directory repo))
+                         (magit-list-refs "refs/heads/" "%(refname:short)")))
+                     multi-magit-selected-repositories)))
+
+(defun multi-magit-checkout (branch)
+  "Checkout BRANCH for each selected repository."
+  (interactive (list (magit-completing-read
+                      "Checkout"
+                      (multi-magit-list-common-branches)
+                      nil nil nil 'magit-revision-history)))
+  (with-multi-magit-process
+    (dolist (repo multi-magit-selected-repositories)
+      (let ((default-directory repo)
+            (inhibit-message t))
+        (magit-checkout branch)))))
+
 ;;;; Select/unselect Repositories
 
 (defun multi-magit-repolist-column-status (_id)

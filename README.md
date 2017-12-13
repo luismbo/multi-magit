@@ -52,3 +52,10 @@ file count.
                         'multi-magit-insert-repos-overview
                          nil t)
 ```
+## Multi-repository Commands
+
+#### [command] multi-magit-checkout
+
+Checkout a given branch on each of the selected repositories. Lists
+suggestions based on branch names that are common across every
+repository.
