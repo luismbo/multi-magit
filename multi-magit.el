@@ -117,7 +117,7 @@ merge-base betweenn HEAD and @{upstream}."
 (defvar multi-magit-process-buffer-name "*Multi-Magit process")
 
 (defun multi-magit--after-magit-process-finish (arg &optional process-buf
-                                                    command-buf default-dir
+                                                    _command-buf _default-dir
                                                     section)
   (unless (integerp arg)
     (setq process-buf (process-buffer arg))
