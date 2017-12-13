@@ -59,3 +59,11 @@ file count.
 Checkout a given branch on each of the selected repositories. Lists
 suggestions based on branch names that are common across every
 repository.
+
+#### [command] multi-magit-git-command
+
+Execute a git command for each selected repository.
+
+#### [command] multi-magit-shell-command
+
+Execute a shell command for each selected repository.

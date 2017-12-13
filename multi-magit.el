@@ -177,6 +177,39 @@ merge-base betweenn HEAD and @{upstream}."
             (inhibit-message t))
         (magit-checkout branch)))))
 
+;;; FIXME: this should be asynchronous, but that would require an
+;;; alternative approach to `multi-magit--after-magit-process-finish'.
+(defun multi-magit--shell-command (command)
+  (with-multi-magit-process
+    (dolist (repo multi-magit-selected-repositories)
+      (let ((default-directory repo)
+            (inhibit-message t)
+            (process-environment process-environment))
+        (push "GIT_PAGER=cat" process-environment)
+        (magit-call-process shell-file-name shell-command-switch command)))))
+
+(defun multi-magit-git-command (command)
+  "Execute COMMAND synchronously for each selected repository.
+
+Interactively, prompt for COMMAND in the minibuffer. \"git \" is
+used as initial input, but can be deleted to run another command.
+
+COMMAND is run in the top-level directory of each repository."
+  (interactive (list (read-shell-command "Shell command: "
+                                         "git "
+                                         'magit-git-command-history)))
+  (multi-magit--shell-command command))
+
+(defun multi-magit-shell-command (command)
+  "Execute COMMAND synchronously for each selected repository.
+
+Interactively, prompt for COMMAND in the minibuffer. COMMAND is
+run in the top-level directory of each repository."
+  (interactive (list (read-shell-command "Shell command: "
+                                         nil
+                                         'magit-git-command-history)))
+  (multi-magit--shell-command command))
+
 ;;;; Select/unselect Repositories
 
 (defun multi-magit-repolist-column-status (_id)
