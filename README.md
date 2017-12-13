@@ -4,6 +4,9 @@ A set of extensions to [Magit](https://magit.vc) for handling multiple
 repositories simultaneously. This documentation will only make sense
 if you're familiar with Magit.
 
+
+## Browsing Multiple Repositories
+
 #### [custom variable] multi-magit-selected-repositories
 
 This list determines which repositories the various multi-magit should
@@ -37,18 +40,7 @@ inserted for each repo. It accepts the same sections as
 `magit-status-sections-hook` but defaults to lightweight sections
 focused on giving you a quick overview of each repository.
 
-#### [section] multi-magit-insert-repos-overview
 
-Add this to `magit-status-sections-hook` to include a one-line
-overview for each selected repository showing the repository name, the
-current branch and quick status showing a untracked/staged/unstaged
-file count.
-
-```elisp
-(magit-add-section-hook 'magit-status-sections-hook
-                        'multi-magit-insert-repos-overview
-                         nil t)
-```
 ## Multi-repository Commands
 
 #### [command] multi-magit-checkout
@@ -64,3 +56,19 @@ Execute a git command for each selected repository.
 #### [command] multi-magit-shell-command
 
 Execute a shell command for each selected repository.
+
+
+## Repository Overview for `magit-status`
+
+#### [section] multi-magit-insert-repos-overview
+
+Add this to `magit-status-sections-hook` to include a one-line
+overview for each selected repository showing the repository name, the
+current branch and quick status showing a untracked/staged/unstaged
+file count.
+
+```elisp
+(magit-add-section-hook 'magit-status-sections-hook
+                        'multi-magit-insert-repos-overview
+                         nil t)
+```
