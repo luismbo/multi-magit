@@ -99,7 +99,7 @@ merge-base betweenn HEAD and @{upstream}."
       (setq multi-magit-selected-repositories
             (cl-merge 'list
                       (list repo)
-                      (copy-list multi-magit-selected-repositories)
+                      (cl-copy-list multi-magit-selected-repositories)
                       #'string<))
       (message "multi-magit: %s selected." repo))))
 
@@ -211,7 +211,7 @@ repositories are displayed."
                               (magit-list-repos)))))
         (tabulated-list-print)
         (save-excursion
-          (beginning-of-buffer)
+          (goto-char (point-min))
           (while (tabulated-list-get-id)
             (when (member (magit-toplevel (tabulated-list-get-id))
                           multi-magit-selected-repositories)
@@ -350,7 +350,7 @@ repositories are displayed."
   (interactive (list (magit-section-when multi-magit-repo)
                      current-prefix-arg))
   (when repo
-    (magit-status repo)))
+    (magit-status-internal repo)))
 
 ;;;###autoload
 (defun multi-magit-insert-repos-overview ()
