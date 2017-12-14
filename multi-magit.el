@@ -183,7 +183,7 @@ merge-base betweenn HEAD and @{upstream}."
   (let ((buffer (multi-magit-process-buffer)))
     (with-current-buffer buffer
       (let ((inhibit-read-only t))
-        (setq default-directory (temporary-file-directory)) ; HACK
+        (setq default-directory temporary-file-directory) ; HACK
         (erase-buffer)
         (magit-process-mode)))
     (let ((multi-magit-record-process-setup t)
