@@ -64,7 +64,7 @@ Execute a shell command for each selected repository.
 
 Add this to `magit-status-sections-hook` to include a one-line
 overview for each selected repository showing the repository name, the
-current branch and quick status showing a untracked/staged/unstaged
+current branch and quick status showing an untracked/staged/unstaged
 file count.
 
 ```elisp
