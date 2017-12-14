@@ -500,37 +500,38 @@ like to select some using `multi-magit-list-repositories'? ")
 ;;;###autoload
 (defun multi-magit-insert-repos-overview ()
   "Insert sections for all selected repositories."
-  (let* ((repos multi-magit-selected-repositories)
-         (repo-names (multi-magit--selected-repo-names))
-         (path-format (format "%%-%is "
-                              (min (apply 'max (mapcar 'length repo-names))
-                                   (/ (window-width) 2))))
-         (branch-format (format "%%-%is " (min 25 (/ (window-width) 3)))))
-    (magit-insert-heading (format "%s (%d)"
-                                  (propertize "Selected repositories"
-                                              'face 'magit-section-heading)
-                                  (length repos)))
-    (cl-loop for repo in repos
-             for repo-name in repo-names
-             do (let ((default-directory repo))
-                  (magit-insert-section (multi-magit-repo repo t)
-                    (insert (propertize (format path-format repo-name)
-                                        'face 'magit-diff-file-heading))
-                    (insert (format branch-format
-                                    (--if-let (magit-get-current-branch)
-                                        (propertize it 'face 'magit-branch-local)
-                                      (propertize "(detached)" 'face 'warning))))
-                    (insert (mapconcat
-                             'identity
-                             (remove nil
-                                     (list (--when-let (magit-untracked-files)
-                                             (format "%d untracked" (length it)))
-                                           (--when-let (magit-unstaged-files)
-                                             (format "%d unstaged" (length it)))
-                                           (--when-let (magit-staged-files)
-                                             (format "%d staged" (length it)))))
-                             ", "))
-                    (insert "\n")))))
+  (when multi-magit-selected-repositories
+    (let* ((repos multi-magit-selected-repositories)
+           (repo-names (multi-magit--selected-repo-names))
+           (path-format (format "%%-%is "
+                                (min (apply 'max (mapcar 'length repo-names))
+                                     (/ (window-width) 2))))
+           (branch-format (format "%%-%is " (min 25 (/ (window-width) 3)))))
+      (magit-insert-heading (format "%s (%d)"
+                                    (propertize "Selected repositories"
+                                                'face 'magit-section-heading)
+                                    (length repos)))
+      (cl-loop for repo in repos
+               for repo-name in repo-names
+               do (let ((default-directory repo))
+                    (magit-insert-section (multi-magit-repo repo t)
+                      (insert (propertize (format path-format repo-name)
+                                          'face 'magit-diff-file-heading))
+                      (insert (format branch-format
+                                      (--if-let (magit-get-current-branch)
+                                          (propertize it 'face 'magit-branch-local)
+                                        (propertize "(detached)" 'face 'warning))))
+                      (insert (mapconcat
+                               'identity
+                               (remove nil
+                                       (list (--when-let (magit-untracked-files)
+                                               (format "%d untracked" (length it)))
+                                             (--when-let (magit-unstaged-files)
+                                               (format "%d unstaged" (length it)))
+                                             (--when-let (magit-staged-files)
+                                               (format "%d staged" (length it)))))
+                               ", "))
+                      (insert "\n"))))))
   (insert "\n"))
 
 (provide 'multi-magit)
