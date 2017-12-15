@@ -196,10 +196,10 @@ merge-base betweenn HEAD and @{upstream}."
   `(call-with-multi-magit-process (lambda () ,@body)))
 
 (defun multi-magit-list-common-branches ()
-  (--reduce (-intersection acc it)
-            (--map (let ((default-directory it))
-                     (magit-list-refs "refs/heads/" "%(refname:short)"))
-                   multi-magit-selected-repositories)))
+  (-reduce '-intersection
+           (--map (let ((default-directory it))
+                    (magit-list-refs "refs/heads/" "%(refname:short)"))
+                  multi-magit-selected-repositories)))
 
 (defun multi-magit-checkout (branch)
   "Checkout BRANCH for each selected repository."
