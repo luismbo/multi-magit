@@ -464,7 +464,8 @@ repositories are displayed."
                         (magit-insert-section (multi-magit-status repo)
                           (multi-magit--insert-repo-heading repo-name)
                           (insert "\n")
-                          (magit-run-section-hook 'multi-magit-status-sections-hook)))))))))
+                          (magit-run-section-hook 'multi-magit-status-sections-hook))))))
+      (add-hook 'post-command-hook 'multi-magit--set-current-repo nil :local))))
 
 ;;;###autoload
 (defun multi-magit-status ()
@@ -475,8 +476,6 @@ like to select some using `multi-magit-list-repositories'? ")
         (multi-magit-list-repositories))
     (let ((buffer (get-buffer-create multi-magit-status-buffer-name)))
       (multi-magit--refresh-status buffer)
-      (with-current-buffer buffer
-        (add-hook 'post-command-hook 'multi-magit--set-current-repo nil :local))
       (magit-display-buffer buffer))))
 
 ;;;; Magit-status Sections
