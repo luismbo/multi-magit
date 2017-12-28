@@ -41,7 +41,6 @@
 (easy-menu-define multi-magit-status-mode-menu multi-magit-status-mode-map
   "Multi-Magit menu"
   '("Multi-Magit"
-    ["Status"            multi-magit-status t]
     ["Checkout"          multi-magit-checkout t]
     ["Git command"       multi-magit-git-command t]
     ["Shell command"     multi-magit-shell-command t]
