@@ -536,5 +536,74 @@ like to select some using `multi-magit-list-repositories'? ")
                       (insert "\n"))))))
   (insert "\n"))
 
+;;;; Manage Branches
+
+(define-derived-mode multi-magit-branches-mode magit-mode "Multi-Magit Branches"
+  :group 'multi-magit
+  (hack-dir-local-variables-non-file-buffer))
+
+;; XXX: move me elsewhere
+(defun multi-magit--all-repositories ()
+  (magit-list-repos-uniquify
+   (--map (cons (file-name-nondirectory (directory-file-name it))
+                it)
+          (magit-list-repos))))
+
+(defun multi-magit--selected-repositories ()
+  (magit-list-repos-uniquify
+   (--map (cons (file-name-nondirectory (directory-file-name it))
+                it)
+          multi-magit-selected-repositories)))
+
+;; TODO
+;; 1. add option for listing all repositories or just the selected ones
+;; 2. disable the magit-mode commands
+;; 3. add delete command
+;; 4. add select command
+
+(defun multi-magit-insert-branches ()
+  "Insert sections showing all local branches."
+  (magit-insert-section (local nil)
+    (magit-insert-heading "Branches:")
+    (let ((branch->repos (make-hash-table :test 'equal))
+          (branch->paths (make-hash-table :test 'equal)))
+      (cl-loop for (repo . path) in (multi-magit--all-repositories)
+               for default-directory = path
+         do (-map (lambda (branch)
+                    (push repo (gethash branch branch->repos))
+                    (push path (gethash branch branch->paths)))
+                  (magit-list-refs "refs/heads/" "%(refname:short)")))
+      (maphash (lambda (branch repos)
+                 (magit-insert-section it (branch branch t)
+                   (insert (propertize (format "%-30s " branch)
+                                       'face 'magit-branch-local
+                                       'multi-magit-repos (gethash branch branch->paths)))
+                   (insert (first repos))
+                   (--map (insert (format ", %s" it)) (rest repos)))
+                 (insert ?\n))
+               branch->repos)))
+  (insert ?\n)
+  (magit-make-margin-overlay nil t)))
+
+(defcustom multi-magit-branches-sections-hook
+  '(multi-magit-insert-branches)
+  "Hook run to insert sections into a branches buffer."
+  :group 'multi-magit
+  :type 'hook)
+
+(defun multi-magit-branches-refresh-buffer ()
+  (setq magit-set-buffer-margin-refresh (not (magit-buffer-margin-p)))
+  (magit-insert-section (branchbuf)
+    (run-hooks 'multi-magit-branches-sections-hook)))
+
+;; (magit-insert-error-header magit-insert-branch-description magit-insert-local-branches magit-insert-remote-branches magit-insert-tags)
+
+(defun multi-magit-list-all-branches ()
+  "List all branches in all repositories in
+`magit-repository-directories' aggregating branches with common
+names."
+  (interactive)
+  (magit-mode-setup #'multi-magit-branches-mode))
+
 (provide 'multi-magit)
 ;;; multi-magit.el ends here
