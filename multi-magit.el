@@ -583,7 +583,7 @@ like to select some using `multi-magit-list-repositories'? ")
                  (insert ?\n))
                branch->repos)))
   (insert ?\n)
-  (magit-make-margin-overlay nil t)))
+  (magit-make-margin-overlay nil t))
 
 (defcustom multi-magit-branches-sections-hook
   '(multi-magit-insert-branches)
