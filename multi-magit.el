@@ -84,7 +84,7 @@ merge-base betweenn HEAD and @{upstream}."
       (magit-insert-section (diffstat)
         (magit-insert-heading "Committed changes")
         (magit-git-wash #'magit-diff-wash-diffs
-                        "diff" merge-base "--stat" "--numstat" "--no-prefix")
+                        "diff" merge-base "HEAD" "--stat" "--numstat" "--no-prefix")
         (insert "\n")
         (magit-insert-log (format "@{upstream}..") magit-log-section-arguments)))))
 
