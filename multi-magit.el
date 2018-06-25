@@ -84,7 +84,7 @@ merge-base betweenn HEAD and @{upstream}."
       (magit-insert-section (diffstat)
         (magit-insert-heading "Committed changes")
         (magit-git-wash #'magit-diff-wash-diffs
-                        "diff" merge-base "--stat" "--numstat" "--no-prefix")
+                        "diff" merge-base "HEAD" "--stat" "--numstat" "--no-prefix")
         (insert "\n")
         (magit-insert-log (format "@{upstream}..") magit-log-section-arguments)))))
 
@@ -99,10 +99,12 @@ merge-base betweenn HEAD and @{upstream}."
     (if (null repo)
         (user-error "multi-magit: couldn't find a repository here.")
       (setq multi-magit-selected-repositories
-            (cl-merge 'list
-                      (list repo)
-                      (cl-copy-list multi-magit-selected-repositories)
-                      #'string<))
+            (cl-delete-duplicates
+             (cl-merge 'list
+                       (list repo)
+                       (cl-copy-list multi-magit-selected-repositories)
+                       #'string<)
+             :test #'string=))
       (message "multi-magit: %s selected." repo))))
 
 (defun multi-magit-unselect-repository (&optional directory)
