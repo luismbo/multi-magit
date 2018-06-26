@@ -351,7 +351,7 @@ repositories are displayed."
         (save-excursion
           (goto-char (point-min))
           (while (tabulated-list-get-id)
-            (when (member (magit-toplevel (tabulated-list-get-id))
+            (when (member (file-name-as-directory (tabulated-list-get-id))
                           multi-magit-selected-repositories)
               (tabulated-list-put-tag "*"))
             (forward-line)))
