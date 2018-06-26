@@ -92,6 +92,18 @@ merge-base betweenn HEAD and @{upstream}."
   "The list of selected repositories that will be displayed by
 `multi-magit-status'.")
 
+(defun multi-magit--all-repositories ()
+  (magit-list-repos-uniquify
+   (--map (cons (file-name-nondirectory (directory-file-name it))
+                it)
+          (magit-list-repos))))
+
+(defun multi-magit--selected-repositories ()
+  (magit-list-repos-uniquify
+   (--map (cons (file-name-nondirectory (directory-file-name it))
+                it)
+          multi-magit-selected-repositories)))
+
 (defun multi-magit-select-repository (&optional directory)
   "Select DIRECTORY's repository."
   (interactive)
@@ -358,6 +370,125 @@ repositories are displayed."
         (switch-to-buffer (current-buffer)))
     (message "You need to customize `magit-repository-directories' %s"
              "before you can list repositories")))
+
+;;;; List Branches
+
+(defvar multi-magit-branchlist-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map tabulated-list-mode-map)
+    (define-key map "g" 'multi-magit-list-branches)
+    (define-key map (if (featurep 'jkl) [return] (kbd "C-m"))
+      'multi-magit-branchlist-checkout)
+    map)
+  "Local keymap for Multi-Magit-Branchlist mode buffers.")
+
+(defun multi-magit--human-readable-time-since (seconds)
+  (let* ((seconds (truncate (float-time (time-since (seconds-to-time seconds)))))
+         (minutes (truncate seconds 60)))
+    (if (zerop minutes)
+        (format "%ss" seconds)
+      (let ((hours (truncate minutes 60)))
+        (if (zerop hours)
+            (format "%sm" minutes)
+          (let ((days (truncate hours 24)))
+            (if (zerop days)
+                (format "%sh" hours)
+              (let ((weeks (truncate days 7)))
+                (if (zerop weeks)
+                    (format "%sd" days)
+                  ;; just an approximation
+                  (let ((months (truncate days 30)))
+                    (if (zerop months)
+                        (format "%sw" weeks)
+                      ;; ditto
+                      (let ((years (truncate days 365)))
+                        (if (zerop years)
+                            (format "%smo" months)
+                          (format "%sy" years))))))))))))))
+
+(defun multi-magit--tabulated-list-printer (id cols)
+  (let ((new-cols (vector (elt cols 0)
+                          (multi-magit--human-readable-time-since (elt cols 1))
+                          (elt cols 2))))
+    (tabulated-list-print-entry id new-cols)))
+
+(define-derived-mode multi-magit-branchlist-mode tabulated-list-mode "Branches"
+  "Major mode for managing the list of selected Git repositories."
+  (setq x-stretch-cursor        nil)
+  (setq tabulated-list-padding  0)
+  (setq tabulated-list-sort-key (cons "Branch" nil))
+  (setq tabulated-list-format
+        [("Branch" 30 t)
+         ("Chg" 5 (lambda (e1 e2)
+                    (> (elt (second e1) 1)
+                       (elt (second e2) 1))))
+         ("Repositories" 99 t)])
+  (setq tabulated-list-printer 'multi-magit--tabulated-list-printer)
+  (setq tabulated-list-padding 2)
+  (tabulated-list-init-header))
+
+(defun multi-magit-branchlist-checkout ()
+  "Checkout branch at point in its respective repositories. Point
+`multi-magit-selected-repositories' to these repositories."
+  (interactive)
+  (cl-destructuring-bind (&optional branch &rest repos)
+      (tabulated-list-get-id)
+    (when (null branch)
+      (user-error "There is no branch at point"))
+    (when (yes-or-no-p (format "Select %s and checkout `%s'? "
+                               (mapconcat (lambda (repo)
+                                            (file-name-nondirectory (directory-file-name repo)))
+                                          repos ", ")
+                               branch))
+      (setq multi-magit-selected-repositories repos)
+      (multi-magit-checkout branch))))
+
+;;;###autoload
+(defun multi-magit-list-branches ()
+  "Display a list of branches in all repositories, selected or unselected.
+
+Use the options `magit-repository-directories' and
+`magit-repository-directories-depth' to control which
+repositories are displayed."
+  (interactive)
+  (if magit-repository-directories
+      (with-current-buffer (get-buffer-create "*Multi-Magit Branches*")
+        (multi-magit-branchlist-mode)
+        (let ((branch->info (make-hash-table :test 'equal)))
+          (cl-loop
+             for (repo . path) in (multi-magit--all-repositories)
+             for default-directory = path
+             do (-map (lambda (branch-path)
+                        (let* ((branch (file-name-nondirectory branch-path))
+                               (info (gethash branch branch->info)))
+                          (when (null info)
+                            (setf info (setf (gethash branch branch->info)
+                                             (list nil nil nil))))
+                          (push repo (first info))
+                          (push path (second info))
+                          (setf (third info)
+                                (max (or (third info) 0)
+                                     (float-time (sixth (file-attributes branch-path)))))))
+                      ;; (magit-list-refs "refs/heads/" "%(refname:short)")
+                      ;; would be the proper way to do this, but it's
+                      ;; comparatively slow (at least on Windows). Also, note
+                      ;; that we want to exclude secondary worktrees.
+                      (ignore-errors
+                        (directory-files (expand-file-name ".git/refs/heads/" path)
+                                         t "[^.]"))))
+          (setq tabulated-list-entries
+                (cl-loop
+                   for branch being the hash-keys in branch->info
+                   using (hash-value info)
+                   collect (cl-destructuring-bind (repos paths last-changed) info
+                             (list (cons branch paths)
+                                   (vector (propertize branch 'face 'magit-branch-local)
+                                           last-changed
+                                           (mapconcat 'identity repos ", ")))))))
+        (tabulated-list-print)
+        (switch-to-buffer (current-buffer)))
+    (message "You need to customize `magit-repository-directories' %s"
+             "before you can list branches.")))
 
 ;;;; Multi-Magit Status
 

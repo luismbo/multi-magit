@@ -24,6 +24,17 @@ format as `magit-repolist-columns`. Use `magit-repository-directories`
 and `magit-repository-directories-depth` to control which repositories
 will be listed.
 
+#### [command] multi-magit-list-branches
+
+List all branches in all of your repositories, grouping branches with
+the same name. <kbd>RET</kbd> will select the applicable repositories
+and `multi-magit-checkout` the branch at point.
+
+Use `magit-repository-directories` and
+`magit-repository-directories-depth` to control which repositories
+will be listed.
+
+
 #### [command] multi-magit-status
 
 Like `magit-status` but aggregates all of the
