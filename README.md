@@ -28,7 +28,8 @@ will be listed.
 
 List all branches in all of your repositories, grouping branches with
 the same name. <kbd>RET</kbd> will select the applicable repositories
-and `multi-magit-checkout` the branch at point.
+and `multi-magit-checkout` the branch at point. <kbd>C-k</kbd> deletes
+the branch at point in the applicable repositories.
 
 Use `magit-repository-directories` and
 `magit-repository-directories-depth` to control which repositories

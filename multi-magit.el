@@ -387,6 +387,7 @@ repositories are displayed."
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
     (define-key map "g" 'multi-magit-list-branches)
+    (define-key map (kbd "C-k")  'multi-magit-branchlist-delete)
     (define-key map (if (featurep 'jkl) [return] (kbd "C-m"))
       'multi-magit-branchlist-checkout)
     map)
@@ -450,6 +451,20 @@ repositories are displayed."
                                branch))
       (setq multi-magit-selected-repositories repos)
       (multi-magit-checkout branch))))
+
+(defun multi-magit-branchlist-delete ()
+  "Delete branch at point in its respective repositories."
+  (interactive)
+  (cl-destructuring-bind (&optional branch &rest repos)
+      (tabulated-list-get-id)
+    (when (null branch)
+      (user-error "There is no branch at point"))
+    (when (yes-or-no-p (format "Delete `%s' in %s? "
+                               branch
+                               (mapconcat #'multi-magit--repo-name repos ", ")))
+      (tabulated-list-delete-entry)
+      (let ((multi-magit-selected-repositories repos))
+        (multi-magit-branch-delete branch)))))
 
 ;;;###autoload
 (defun multi-magit-list-branches ()
