@@ -42,9 +42,13 @@
   "Multi-Magit menu"
   '("Multi-Magit"
     ["Checkout"          multi-magit-checkout t]
+    ["Delete branches"   multi-magit-branch-delete t]
+    ["List branches"     multi-magit-list-branches t]
+    "---"
+    ["List repositories" multi-magit-list-repositories t]
+    "---"
     ["Git command"       multi-magit-git-command t]
     ["Shell command"     multi-magit-shell-command t]
-    ["List repositories" multi-magit-list-repositories t]
     "---"
     ["Quit"    magit-mode-bury-buffer t]
     ["Refresh" multi-magit-status t]))
