@@ -92,15 +92,17 @@ merge-base betweenn HEAD and @{upstream}."
   "The list of selected repositories that will be displayed by
 `multi-magit-status'.")
 
+(defun multi-magit--repo-name (repo)
+  (file-name-nondirectory (directory-file-name repo)))
+
 (defun multi-magit--all-repositories ()
   (magit-list-repos-uniquify
-   (--map (cons (file-name-nondirectory (directory-file-name it))
-                it)
+   (--map (cons (multi-magit--repo-name it) it)
           (magit-list-repos))))
 
 (defun multi-magit--selected-repositories ()
   (magit-list-repos-uniquify
-   (--map (cons (file-name-nondirectory (directory-file-name it))
+   (--map (cons (multi-magit--repo-name it)
                 it)
           multi-magit-selected-repositories)))
 
@@ -150,8 +152,7 @@ merge-base betweenn HEAD and @{upstream}."
             (target-section (cdr (assq section multi-magit-pending-process-sections))))
         (when target-section
           (let ((repo-name (with-current-buffer process-buf
-                             (file-name-nondirectory
-                              (directory-file-name default-directory)))))
+                             (multi-magit--repo-name default-directory))))
             (setq multi-magit-pending-process-sections
                   (delq section multi-magit-pending-process-sections))
             (save-excursion
@@ -355,10 +356,7 @@ repositories are displayed."
                           (list path
                                 (vconcat (--map (or (funcall (nth 2 it) id) "")
                                                 multi-magit-repolist-columns)))))
-                      (magit-list-repos-uniquify
-                       (--map (cons (file-name-nondirectory (directory-file-name it))
-                                    it)
-                              (magit-list-repos)))))
+                      (multi-magit--all-repositories)))
         (tabulated-list-print)
         (save-excursion
           (goto-char (point-min))
@@ -436,9 +434,7 @@ repositories are displayed."
     (when (null branch)
       (user-error "There is no branch at point"))
     (when (yes-or-no-p (format "Select %s and checkout `%s'? "
-                               (mapconcat (lambda (repo)
-                                            (file-name-nondirectory (directory-file-name repo)))
-                                          repos ", ")
+                               (mapconcat #'multi-magit--repo-name repos ", ")
                                branch))
       (setq multi-magit-selected-repositories repos)
       (multi-magit-checkout branch))))
