@@ -219,17 +219,29 @@ merge-base betweenn HEAD and @{upstream}."
                     (magit-list-refs "refs/heads/" "%(refname:short)"))
                   multi-magit-selected-repositories)))
 
+(defun multi-magit--read-branch (prompt)
+  (magit-completing-read prompt
+                         (multi-magit-list-common-branches)
+                         nil nil nil
+                         'magit-revision-history))
+
 (defun multi-magit-checkout (branch)
   "Checkout BRANCH for each selected repository."
-  (interactive (list (magit-completing-read
-                      "Checkout"
-                      (multi-magit-list-common-branches)
-                      nil nil nil 'magit-revision-history)))
+  (interactive (list (multi-magit--read-branch "Checkout")))
   (with-multi-magit-process
     (dolist (repo multi-magit-selected-repositories)
       (let ((default-directory repo)
             (inhibit-message t))
         (magit-checkout branch)))))
+
+(defun multi-magit-branch-delete (branch)
+  "Delete BRANCH for each selected repository."
+  (interactive (list (multi-magit--read-branch "Delete")))
+  (with-multi-magit-process
+    (dolist (repo multi-magit-selected-repositories)
+      (let ((default-directory repo)
+            (inhibit-message t))
+        (magit-branch-delete (list branch) t)))))
 
 (defun multi-magit--shell-command (command)
   (with-multi-magit-process
