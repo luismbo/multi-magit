@@ -391,11 +391,21 @@ repositories are displayed."
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
     (define-key map "g" 'multi-magit-list-branches)
+    (define-key map "q" 'kill-buffer)
     (define-key map (kbd "C-k")  'multi-magit-branchlist-delete)
     (define-key map (if (featurep 'jkl) [return] (kbd "C-m"))
       'multi-magit-branchlist-checkout)
     map)
   "Local keymap for Multi-Magit-Branchlist mode buffers.")
+
+(easy-menu-define multi-magit-branchlist-mode-menu multi-magit-branchlist-mode-map
+  "multi-magit-branchlist-mode menu."
+  '("Multi-Magit Branches"
+    ["Checkout" multi-magit-branchlist-checkout t]
+    ["Delete"   multi-magit-branchlist-delete t]
+    "---"
+    ["Quit"     kill-buffer t]
+    ["Refresh"  multi-magit-list-branches t]))
 
 (defun multi-magit--human-readable-time-since (seconds)
   (let* ((seconds (truncate (float-time (time-since (seconds-to-time seconds)))))
