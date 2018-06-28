@@ -463,12 +463,16 @@ repositories are displayed."
       (tabulated-list-get-id)
     (when (null branch)
       (user-error "There is no branch at point"))
-    (when (yes-or-no-p (format "Delete `%s' in %s? "
-                               branch
-                               (mapconcat #'multi-magit--repo-name repos ", ")))
-      (tabulated-list-delete-entry)
-      (let ((multi-magit-selected-repositories repos))
-        (multi-magit-branch-delete branch)))))
+    (let ((repo-names (mapconcat #'multi-magit--repo-name repos ", ")))
+      (--when-let (--filter (let ((default-directory it))
+                              (string= (magit-get-current-branch) branch))
+                            repos)
+        (user-error "Refusing to delete. `%s' is currently checked out in %s"
+                    branch repo-names))
+      (when (yes-or-no-p (format "Delete `%s' in %s? " branch repo-names))
+        (tabulated-list-delete-entry)
+        (let ((multi-magit-selected-repositories repos))
+          (multi-magit-branch-delete branch))))))
 
 ;;;###autoload
 (defun multi-magit-list-branches ()
