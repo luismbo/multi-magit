@@ -282,6 +282,12 @@ run in the top-level directory of each repository."
 
 ;;;; Select/unselect Repositories
 
+(defface multi-magit-repolist-repo-face
+  '((((class color) (background light)) :inherit magit-branch-local)
+    (((class color) (background  dark)) :inherit magit-branch-local))
+  "Face for repository names in `multi-magit-list-repositories'."
+  :group 'multi-magit-faces)
+
 (defun multi-magit-repolist-column-status (_id)
   "Insert letters if there are uncommitted changes.
 
@@ -292,8 +298,12 @@ Show S if there is at least one staged file."
           (if (magit-unstaged-files)  "U" "")
           (if (magit-staged-files)    "S" "")))
 
+(defun multi-magit-repolist-column-repo (repo)
+  "Insert the identification of the repository."
+  (propertize repo 'face 'multi-magit-repolist-repo-face))
+
 (defcustom multi-magit-repolist-columns
-  '(("Name"   25 magit-repolist-column-ident ())
+  '(("Name"   25 multi-magit-repolist-column-repo ())
     ("Dirty"   5 multi-magit-repolist-column-status
      ((:right-align t)
       (:help-echo "N - untracked, U - unstaged, S - staged")))
