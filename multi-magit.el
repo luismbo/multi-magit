@@ -549,7 +549,9 @@ repositories are displayed."
 
 (defcustom multi-magit-status-sections-hook
   '(magit-insert-untracked-files
-    multi-magit-insert-uncommitted-changes
+    magit-insert-unstaged-changes
+    magit-insert-staged-changes
+    ;; multi-magit-insert-uncommitted-changes
     multi-magit-insert-committed-changes)
   "Hook run to insert section into a `multi-magit-status' buffer."
   :group 'multi-magit
