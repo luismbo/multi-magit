@@ -31,6 +31,10 @@
 (defvar multi-magit-status-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "g" 'multi-magit-status)
+    ;; since multi-magit-status slows down every magit-refresh, killing the
+    ;; buffer when it's not needed is probably a better idea. Change this back
+    ;; to magit-mode-bury-buffer when magit becomes faster.
+    (define-key map "q" 'kill-this-buffer)
     map)
   "Keymap for `multi-magit-status-mode'.")
 
@@ -50,7 +54,7 @@
     ["Git command"       multi-magit-git-command t]
     ["Shell command"     multi-magit-shell-command t]
     "---"
-    ["Quit"    magit-mode-bury-buffer t]
+    ["Quit"    kill-this-buffer t] ; see note in `multi-magit-status-mode-map'
     ["Refresh" multi-magit-status t]))
 
 (defun multi-magit--find-current-section ()
