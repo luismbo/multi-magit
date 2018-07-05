@@ -477,7 +477,8 @@ repositories are displayed."
     (when (yes-or-no-p (format "Select %s and checkout `%s'? "
                                (mapconcat #'multi-magit--repo-name repos ", ")
                                branch))
-      (setq multi-magit-selected-repositories repos)
+      (setq multi-magit-selected-repositories
+            (--map (file-name-as-directory it) repos))
       (multi-magit-checkout branch))))
 
 (defun multi-magit-branchlist-delete ()
