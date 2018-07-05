@@ -61,17 +61,17 @@
   (save-excursion
     (while (and (or (null (magit-current-section))
                     (eq 'multi-magit-toplevel
-                        (magit-section-type (magit-current-section))))
+                        (oref (magit-current-section) type)))
                 (not (eql -1 (forward-line -1)))))
     (magit-current-section)))
 
 (defun multi-magit--current-repo (&optional section)
   (setq section (or section (multi-magit--find-current-section)))
   (when section
-    (let ((parent (magit-section-parent section)))
+    (let ((parent (oref section parent)))
       (when parent
-        (if (null (magit-section-parent parent))
-            (magit-section-value section)
+        (if (null (oref parent parent))
+            (oref section value)
             (multi-magit--current-repo parent))))))
 
 ;;;###autoload
@@ -164,18 +164,18 @@ merge-base betweenn HEAD and @{upstream}."
             (setq multi-magit-pending-process-sections
                   (delq section multi-magit-pending-process-sections))
             (save-excursion
-              (goto-char (magit-section-start target-section))
+              (goto-char (oref target-section start))
               ;; 1+ at the end because we've inserted an extra
               ;; newline in `multi-magit--around-magit-process-setup'.
-              (delete-region (magit-section-start target-section)
-                             (1+ (magit-section-end target-section)))
+              (delete-region (oref target-section start)
+                             (1+ (oref target-section end)))
               (insert (propertize (concat "[" repo-name "]")
                                   'face (if (= arg 0)
                                             'magit-process-ok
                                           'magit-process-ng)))
               (insert-buffer-substring process-buf
-                                       (magit-section-start section)
-                                       (magit-section-end section)))))))))
+                                       (oref section start)
+                                       (oref section end)))))))))
 
 (advice-add 'magit-process-finish :after
             #'multi-magit--after-magit-process-finish)
