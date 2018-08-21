@@ -459,8 +459,8 @@ repositories are displayed."
   (setq tabulated-list-format
         [("Branch" 30 t)
          ("Chg" 5 (lambda (e1 e2)
-                    (> (elt (second e1) 1)
-                       (elt (second e2) 1))))
+                    (> (elt (cl-second e1) 1)
+                       (elt (cl-second e2) 1))))
          ("Repositories" 99 t)])
   (setq tabulated-list-printer 'multi-magit--tabulated-list-printer)
   (setq tabulated-list-padding 2)
@@ -520,10 +520,10 @@ repositories are displayed."
                           (when (null info)
                             (setf info (setf (gethash branch branch->info)
                                              (list nil nil nil))))
-                          (push repo (first info))
-                          (push path (second info))
-                          (setf (third info)
-                                (max (or (third info) 0)
+                          (push repo (cl-first info))
+                          (push path (cl-second info))
+                          (setf (cl-third info)
+                                (max (or (cl-third info) 0)
                                      (float-time (sixth (file-attributes branch-path)))))))
                       ;; (magit-list-refs "refs/heads/" "%(refname:short)")
                       ;; would be the proper way to do this, but it's
@@ -606,7 +606,7 @@ repositories are displayed."
 
 (defun multi-magit--set-current-repo ()
   (let ((repo (or (multi-magit--current-repo)
-                  (first multi-magit-selected-repositories))))
+                  (cl-first multi-magit-selected-repositories))))
     (setq default-directory repo)
     (setq magit--default-directory repo)))
 
