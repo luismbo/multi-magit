@@ -524,7 +524,7 @@ repositories are displayed."
                           (push path (cl-second info))
                           (setf (cl-third info)
                                 (max (or (cl-third info) 0)
-                                     (float-time (sixth (file-attributes branch-path)))))))
+                                     (float-time (cl-sixth (file-attributes branch-path)))))))
                       ;; (magit-list-refs "refs/heads/" "%(refname:short)")
                       ;; would be the proper way to do this, but it's
                       ;; comparatively slow (at least on Windows). Also, note
