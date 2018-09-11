@@ -603,8 +603,19 @@ repositories are displayed."
             :around
             'multi-magit--around-magit-mode-get-buffers)
 
+(defcustom multi-magit-refresh-status-buffer t
+  "Whether the multi-magit-status buffer is refreshed after running git.
+
+When this variable and `magit-refresh-status-buffer' are both
+non-nil, multi-magit's status buffer is automatically refreshed
+after running git for side-effects on a selected repository."
+  :group 'multi-magit
+  :type 'boolean)
+
 (defun multi-magit--maybe-refresh ()
-  (--when-let (and (member default-directory multi-magit-selected-repositories)
+  (--when-let (and magit-refresh-status-buffer
+                   multi-magit-refresh-status-buffer
+                   (member default-directory multi-magit-selected-repositories)
                    (get-buffer multi-magit-status-buffer-name))
     (multi-magit--refresh-status it)))
 

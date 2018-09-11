@@ -52,6 +52,14 @@ inserted for each repo. It accepts the same sections as
 `magit-status-sections-hook` but defaults to lightweight sections
 focused on giving you a quick overview of each repository.
 
+#### [custom variable] multi-magit-refresh-status-buffer
+
+Whether the multi-magit-status buffer is refreshed after running git.
+
+When this variable and `magit-refresh-status-buffer` are both non-nil,
+multi-magit's status buffer is automatically refreshed after running
+git for side-effects on a selected repository.
+
 
 ## Multi-repository Commands
 
