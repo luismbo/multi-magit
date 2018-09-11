@@ -114,6 +114,7 @@ merge-base betweenn HEAD and @{upstream}."
                 it)
           multi-magit-selected-repositories)))
 
+;;;###autoload
 (defun multi-magit-select-repository (&optional directory)
   "Select DIRECTORY's repository."
   (interactive)
@@ -129,6 +130,7 @@ merge-base betweenn HEAD and @{upstream}."
              :test #'string=))
       (message "multi-magit: %s selected." repo))))
 
+;;;###autoload
 (defun multi-magit-unselect-repository (&optional directory)
   "Unselect DIRECTORY's repository."
   (interactive)
@@ -233,6 +235,7 @@ merge-base betweenn HEAD and @{upstream}."
                          nil nil nil
                          'magit-revision-history))
 
+;;;###autoload
 (defun multi-magit-checkout (branch)
   "Checkout BRANCH for each selected repository."
   (interactive (list (multi-magit--read-branch "Checkout")))
@@ -242,6 +245,7 @@ merge-base betweenn HEAD and @{upstream}."
             (inhibit-message t))
         (magit-checkout branch)))))
 
+;;;###autoload
 (defun multi-magit-branch-delete (branch)
   "Delete BRANCH for each selected repository."
   (interactive (list (multi-magit--read-branch "Delete")))
@@ -262,6 +266,7 @@ merge-base betweenn HEAD and @{upstream}."
           (magit-start-process shell-file-name nil
                                shell-command-switch command))))))
 
+;;;###autoload
 (defun multi-magit-git-command (command)
   "Execute COMMAND asynchronously for each selected repository.
 
@@ -274,6 +279,7 @@ COMMAND is run in the top-level directory of each repository."
                                          'magit-git-command-history)))
   (multi-magit--shell-command command))
 
+;;;###autoload
 (defun multi-magit-shell-command (command)
   "Execute COMMAND asynchronously for each selected repository.
 
