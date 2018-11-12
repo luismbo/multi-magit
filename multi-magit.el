@@ -2,8 +2,9 @@
 
 ;; Author: Luis Oliveira <loliveira@common-lisp.net>
 ;; URL: https://github.com/luismbo/multi-magit
-;; Package-Requires: ((magit "2.11"))
+;; Package-Requires: ((emacs "24.4") (magit "2.11"))
 ;; Keywords: git tools vc magit
+;; Version: 0.1
 
 ;;; Commentary:
 
@@ -204,7 +205,7 @@ merge-base betweenn HEAD and @{upstream}."
             :around
             #'multi-magit--around-magit-process-setup)
 
-(defun call-with-multi-magit-process (fn)
+(defun multi-magit--call-with-process (fn)
   (let ((buffer (multi-magit-process-buffer)))
     (with-current-buffer buffer
       (let ((inhibit-read-only t))
@@ -216,9 +217,9 @@ merge-base betweenn HEAD and @{upstream}."
       (funcall fn))
     (magit-display-buffer buffer)))
 
-(defmacro with-multi-magit-process (&rest body)
+(defmacro multi-magit--with-process (&rest body)
   (declare (indent defun) (debug (body)))
-  `(call-with-multi-magit-process (lambda () ,@body)))
+  `(multi-magit--call-with-process (lambda () ,@body)))
 
 (defun multi-magit-list-common-branches ()
   (-reduce '-intersection
@@ -236,7 +237,7 @@ merge-base betweenn HEAD and @{upstream}."
 (defun multi-magit-checkout (branch)
   "Checkout BRANCH for each selected repository."
   (interactive (list (multi-magit--read-branch "Checkout")))
-  (with-multi-magit-process
+  (multi-magit--with-process
     (dolist (repo multi-magit-selected-repositories)
       (let ((default-directory repo)
             (inhibit-message t))
@@ -246,14 +247,14 @@ merge-base betweenn HEAD and @{upstream}."
 (defun multi-magit-branch-delete (branch)
   "Delete BRANCH for each selected repository."
   (interactive (list (multi-magit--read-branch "Delete")))
-  (with-multi-magit-process
+  (multi-magit--with-process
     (dolist (repo multi-magit-selected-repositories)
       (let ((default-directory repo)
             (inhibit-message t))
         (magit-branch-delete (list branch) t)))))
 
 (defun multi-magit--shell-command (command)
-  (with-multi-magit-process
+  (multi-magit--with-process
     (dolist (repo multi-magit-selected-repositories)
       (let ((default-directory repo)
             (inhibit-message t)
