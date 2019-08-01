@@ -503,6 +503,33 @@ repositories are displayed."
         (let ((multi-magit-selected-repositories repos))
           (multi-magit-branch-delete branch))))))
 
+(defun multi-magit--repo-branches+mtime (repo-path)
+  ;; (magit-list-refs "refs/heads/" "%(refname:short)") would be the proper way
+  ;; to do this, but it's comparatively very slow (at least on Windows),
+  ;; particularly if we want to grab the modification time from the commit
+  ;; metadata too. Also, note that we want to exclude secondary worktrees.
+  (when (file-directory-p (expand-file-name ".git" repo-path))
+    (cl-remove-duplicates ; earlier occurences are removed, i.e.,
+                          ; .git/refs/heads takes precedence over
+                          ; .git/packed-refs.
+     (append (let ((packed-refs (expand-file-name ".git/packed-refs" repo-path)))
+               ;; We're certainly asking for trouble parsing packed-refs. :-(
+               (when (file-exists-p packed-refs)
+                 (let* ((mtime (float-time (cl-sixth (file-attributes packed-refs))))
+                        (lines (with-temp-buffer
+                                 (insert-file-contents packed-refs)
+                                 (split-string (buffer-string) "\n" t)))
+                        (heads (--filter (when it (string-match-p "^refs/heads/" it))
+                                         (--map (second (split-string it " " t))
+                                                lines))))
+                   (--map (list (file-name-nondirectory it) mtime) heads))))
+             (--map (list (file-name-nondirectory it)
+                          (float-time (cl-sixth (file-attributes it))))
+                    (directory-files (expand-file-name ".git/refs/heads/" repo-path)
+                                     t "[^.]")))
+     :test #'string=
+     :key #'cl-first)))
+
 ;;;###autoload
 (defun multi-magit-list-branches ()
   "Display a list of branches in all repositories, selected or unselected.
@@ -515,36 +542,25 @@ repositories are displayed."
       (with-current-buffer (get-buffer-create "*Multi-Magit Branches*")
         (multi-magit-branchlist-mode)
         (let ((branch->info (make-hash-table :test 'equal)))
-          (cl-loop
-             for (repo . path) in (multi-magit--all-repositories)
-             for default-directory = path
-             do (-map (lambda (branch-path)
-                        (let* ((branch (file-name-nondirectory branch-path))
-                               (info (gethash branch branch->info)))
-                          (when (null info)
-                            (setf info (setf (gethash branch branch->info)
-                                             (list nil nil nil))))
-                          (push repo (cl-first info))
-                          (push path (cl-second info))
-                          (setf (cl-third info)
-                                (max (or (cl-third info) 0)
-                                     (float-time (cl-sixth (file-attributes branch-path)))))))
-                      ;; (magit-list-refs "refs/heads/" "%(refname:short)")
-                      ;; would be the proper way to do this, but it's
-                      ;; comparatively slow (at least on Windows). Also, note
-                      ;; that we want to exclude secondary worktrees.
-                      (ignore-errors
-                        (directory-files (expand-file-name ".git/refs/heads/" path)
-                                         t "[^.]"))))
+          (cl-loop for (repo . path) in (multi-magit--all-repositories)
+                   for default-directory = path
+                   do (-map (-lambda ((branch mtime))
+                              (let ((info (or (gethash branch branch->info)
+                                              (setf (gethash branch branch->info)
+                                                    (list nil nil nil)))))
+                                (push repo (cl-first info))
+                                (push path (cl-second info))
+                                (setf (cl-third info)
+                                      (max (or (cl-third info) 0) mtime))))
+                            (multi-magit--repo-branches+mtime path)))
           (setq tabulated-list-entries
-                (cl-loop
-                   for branch being the hash-keys in branch->info
-                   using (hash-value info)
-                   collect (cl-destructuring-bind (repos paths last-changed) info
-                             (list (cons branch paths)
-                                   (vector (propertize branch 'face 'magit-branch-local)
-                                           last-changed
-                                           (mapconcat 'identity repos ", ")))))))
+                (cl-loop for branch being the hash-keys in branch->info
+                         using (hash-value info)
+                         collect (cl-destructuring-bind (repos paths last-changed) info
+                                   (list (cons branch paths)
+                                         (vector (propertize branch 'face 'magit-branch-local)
+                                                 last-changed
+                                                 (mapconcat 'identity repos ", ")))))))
         (tabulated-list-print)
         (switch-to-buffer (current-buffer)))
     (message "You need to customize `magit-repository-directories' %s"
