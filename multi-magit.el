@@ -92,7 +92,7 @@ merge-base betweenn HEAD and @{upstream}."
         (magit-git-wash #'magit-diff-wash-diffs
                         "diff" merge-base "HEAD" "--stat" "--numstat" "--no-prefix")
         (insert "\n")
-        (magit-insert-log (format "@{upstream}..") magit-log-section-arguments)))))
+        (magit-insert-log (format "@{upstream}.."))))))
 
 (defvar multi-magit-selected-repositories nil
   "The list of selected repositories that will be displayed by
