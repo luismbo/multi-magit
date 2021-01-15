@@ -92,7 +92,7 @@ merge-base betweenn HEAD and @{upstream}."
         (magit-git-wash #'magit-diff-wash-diffs
                         "diff" merge-base "HEAD" "--stat" "--numstat" "--no-prefix")
         (insert "\n")
-        (magit-insert-log (format "@{upstream}..") magit-log-section-arguments)))))
+        (magit-insert-log (format "@{upstream}.."))))))
 
 (defvar multi-magit-selected-repositories nil
   "The list of selected repositories that will be displayed by
@@ -184,7 +184,7 @@ merge-base betweenn HEAD and @{upstream}."
   (let ((result (funcall original-function program args)))
     (when multi-magit-record-process-setup
       (let ((section (cdr result)))
-        (assert (magit-section-p section))
+        (cl-assert (magit-section-p section))
         (push (cons section
                     (with-current-buffer (multi-magit-process-buffer)
                       (let ((inhibit-read-only t))
@@ -705,7 +705,7 @@ like to select some using `multi-magit-list-repositories'? ")
 
 ;;;; Magit-status Sections
 
-(defvar magit-multi-magit-repo-section-map
+(defvar multi-magit-magit-repo-section-map
   (let ((map (make-sparse-keymap)))
     (unless (featurep 'jkl)
       (define-key map "\C-j"   'multi-magit-repo-visit))
