@@ -705,6 +705,8 @@ like to select some using `multi-magit-list-repositories'? ")
 
 ;;;; Magit-status Sections
 
+;;; Implicitly used by (magit-insert-section (multi-magit-repo ...) ...)
+;;; in `multi-magit-insert-repos-overview'.
 (defvar magit-multi-magit-repo-section-map
   (let ((map (make-sparse-keymap)))
     (unless (featurep 'jkl)
