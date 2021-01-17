@@ -184,7 +184,7 @@ merge-base betweenn HEAD and @{upstream}."
   (let ((result (funcall original-function program args)))
     (when multi-magit-record-process-setup
       (let ((section (cdr result)))
-        (assert (magit-section-p section))
+        (cl-assert (magit-section-p section))
         (push (cons section
                     (with-current-buffer (multi-magit-process-buffer)
                       (let ((inhibit-read-only t))
