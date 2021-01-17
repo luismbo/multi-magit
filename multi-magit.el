@@ -716,10 +716,10 @@ like to select some using `multi-magit-list-repositories'? ")
 
 (defun multi-magit-repo-visit (repo &optional _other-window)
   "Visit REPO by calling `magit-status' on it."
-  (interactive (list (magit-section-when multi-magit-repo)
+  (interactive (list (magit-section-value-if 'multi-magit-repo)
                      current-prefix-arg))
   (when repo
-    (magit-status-internal repo)))
+    (magit-status-setup-buffer repo)))
 
 ;;;###autoload
 (defun multi-magit-insert-repos-overview ()
