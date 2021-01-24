@@ -104,7 +104,9 @@ merge-base betweenn HEAD and @{upstream}."
 (defun multi-magit--all-repositories ()
   (magit-list-repos-uniquify
    (--map (cons (multi-magit--repo-name it) it)
-          (magit-list-repos))))
+          (cl-remove-duplicates (append multi-magit-selected-repositories
+                                        (magit-list-repos))
+                                :test #'string=))))
 
 (defun multi-magit--selected-repositories ()
   (magit-list-repos-uniquify
