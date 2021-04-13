@@ -147,7 +147,7 @@ merge-base betweenn HEAD and @{upstream}."
 (defvar multi-magit-pending-process-sections nil)
 
 (defun multi-magit-process-buffer ()
-  (get-buffer-create "*multi-magit-process"))
+  (get-buffer-create "*multi-magit-process*"))
 
 (defun multi-magit--after-magit-process-finish (arg &optional process-buf
                                                     _command-buf _default-dir
@@ -605,7 +605,7 @@ repositories are displayed."
 (defun multi-magit-status-refresh-buffer ()
   (multi-magit-status))
 
-(defvar multi-magit-status-buffer-name "*Multi-Magit Status")
+(defvar multi-magit-status-buffer-name "*Multi-Magit Status*")
 
 (defun multi-magit--around-magit-mode-get-buffers (original-function &rest args)
   (let ((buffers (apply original-function args))
