@@ -313,16 +313,16 @@ Show S if there is at least one staged file."
   (propertize repo 'face 'multi-magit-repolist-repo-face))
 
 (defcustom multi-magit-repolist-columns
-  '(("Name"   25 multi-magit-repolist-column-repo ())
-    ("Dirty"   5 multi-magit-repolist-column-status
+    '(("Name"    25 magit-repolist-column-ident nil)
+    ("Version" 25 magit-repolist-column-version nil)
+    ("B<U"      3 magit-repolist-column-unpulled-from-upstream
      ((:right-align t)
-      (:help-echo "N - untracked, U - unstaged, S - staged")))
-    ("Branch" 25 magit-repolist-column-branch ())
-    ("B>U"     3 magit-repolist-column-unpushed-to-upstream
+      (:help-echo "Upstream changes not in branch")))
+    ("B>U"      3 magit-repolist-column-unpushed-to-upstream
      ((:right-align t)
       (:help-echo "Local changes not in upstream")))
-    ("Path"   99 magit-repolist-column-path ()))
-  "List of column displayed by `multi-magit-list-repositories'.
+    ("Path"    99 magit-repolist-column-path nil))
+  "List of columns displayed by `magit-list-repositories'.
 
 Each element has the form (HEADER WIDTH FORMAT PROPS).
 
@@ -386,13 +386,25 @@ repositories are displayed."
       (with-current-buffer (get-buffer-create "*Multi-Magit Repositories*")
         (let ((magit-repolist-columns multi-magit-repolist-columns))
           (multi-magit-repolist-mode))
-        (setq tabulated-list-entries
-              (mapcar (-lambda ((id . path))
+	(setq tabulated-list-format
+        (vconcat (mapcar (pcase-lambda (`(,title ,width ,_fn ,props))
+                           (nconc (list title width t)
+                                  (-flatten props)))
+                         multi-magit-repolist-columns)))
+        (setq tabulated-list-entries	
+              (mapcar (pcase-lambda (`(,id . ,path))
                         (let ((default-directory path))
                           (list path
-                                (vconcat (--map (or (funcall (nth 2 it) id) "")
-                                                multi-magit-repolist-columns)))))
+                                (vconcat
+				 (mapcar (pcase-lambda (`(,title ,width ,fn ,props))
+                                     (or (funcall fn `((:id ,id)
+                                                       (:title ,title)
+                                                       (:width ,width)
+						       ,@props))
+					 ""))
+                                            multi-magit-repolist-columns)))))
                       (multi-magit--all-repositories)))
+	(tabulated-list-init-header)
         (tabulated-list-print)
         (save-excursion
           (goto-char (point-min))
