@@ -539,8 +539,9 @@ repositories are displayed."
                    (--map (list (file-name-nondirectory it) mtime) heads))))
              (--map (list (file-name-nondirectory it)
                           (float-time (cl-sixth (file-attributes it))))
-                    (directory-files (expand-file-name ".git/refs/heads/" repo-path)
-                                     t "[^.]")))
+                    (with-demoted-errors "multi-magit: error listing repository branches: %S"
+                      (directory-files (expand-file-name ".git/refs/heads/" repo-path)
+                                       t "[^.]"))))
      :test #'string=
      :key #'cl-first)))
 
