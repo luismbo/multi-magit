@@ -2,7 +2,7 @@
 
 ;; Author: Luis Oliveira <loliveira@common-lisp.net>
 ;; URL: https://github.com/luismbo/multi-magit
-;; Package-Requires: ((emacs "24.4") (magit "2.11"))
+;; Package-Requires: ((emacs "24.4") (magit "3.3.0"))
 ;; Keywords: git tools vc magit
 ;; Version: 0.1
 
