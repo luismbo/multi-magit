@@ -213,7 +213,11 @@ merge-base betweenn HEAD and @{upstream}."
       (let ((inhibit-read-only t))
         (setq default-directory temporary-file-directory) ; HACK
         (erase-buffer)
-        (magit-process-mode)))
+        (magit-process-mode)
+        ;; HACK: disable hooks that don't appreciate multi-magit's setup due to
+        ;; markers being in the wrong buffer.
+        (setq-local magit-section-highlight-hook nil)
+        (setq-local magit-section-unhighlight-hook nil)))
     (let ((multi-magit-record-process-setup t)
           (magit-process-popup-time -1))
       (funcall fn))
