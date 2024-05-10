@@ -302,7 +302,7 @@ run in the top-level directory of each repository."
   "Face for repository names in `multi-magit-list-repositories'."
   :group 'multi-magit-faces)
 
-(defun multi-magit-repolist-column-status (_id)
+(defun multi-magit-repolist-column-status (_spec)
   "Insert letters if there are uncommitted changes.
 
 Show N if there is at least one untracked file.
@@ -312,9 +312,9 @@ Show S if there is at least one staged file."
           (if (magit-unstaged-files)  "U" "")
           (if (magit-staged-files)    "S" "")))
 
-(defun multi-magit-repolist-column-repo (repo)
+(defun multi-magit-repolist-column-repo (spec)
   "Insert the identification of the repository."
-  (propertize repo 'face 'multi-magit-repolist-repo-face))
+  (propertize (cadr (assq :id spec)) 'face 'multi-magit-repolist-repo-face))
 
 (defcustom multi-magit-repolist-columns
   '(("Name"    25 magit-repolist-column-ident nil)
