@@ -247,7 +247,7 @@ merge-base betweenn HEAD and @{upstream}."
     (dolist (repo multi-magit-selected-repositories)
       (let ((default-directory repo)
             (inhibit-message t))
-        (magit-checkout branch)))))
+        (call-interactively #'magit-checkout branch)))))
 
 ;;;###autoload
 (defun multi-magit-branch-delete (branch)
@@ -257,7 +257,7 @@ merge-base betweenn HEAD and @{upstream}."
     (dolist (repo multi-magit-selected-repositories)
       (let ((default-directory repo)
             (inhibit-message t))
-        (magit-branch-delete (list branch) t)))))
+        (call-interactively #'magit-branch-delete (list branch) t)))))
 
 (defun multi-magit--shell-command (command)
   (multi-magit--with-process
