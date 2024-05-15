@@ -538,7 +538,7 @@ repositories are displayed."
                                  (insert-file-contents packed-refs)
                                  (split-string (buffer-string) "\n" t)))
                         (heads (--filter (when it (string-match-p "^refs/heads/" it))
-                                         (--map (second (split-string it " " t))
+                                         (--map (cl-second (split-string it " " t))
                                                 lines))))
                    (--map (list (file-name-nondirectory it) mtime) heads))))
              (--map (list (file-name-nondirectory it)
