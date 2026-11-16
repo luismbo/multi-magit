@@ -597,6 +597,14 @@ repositories are displayed."
   :group 'multi-magit
   :type 'hook)
 
+(defcustom multi-magit-status-heading-padding t
+  "Whether spaces pad the repository name in repository headings.
+They keep the box of `multi-magit-repo-heading' off the name.  With a
+face that has no box, they only indent the heading, which then reads as
+an item of the section above it."
+  :group 'multi-magit
+  :type 'boolean)
+
 (defface multi-magit-repo-heading
   '((((class color) (background light)) :inherit magit-section-heading :box t)
     (((class color) (background  dark)) :inherit magit-section-heading :box t))
@@ -615,7 +623,9 @@ repositories are displayed."
   "Keymap for repository headers.")
 
 (defun multi-magit--insert-repo-heading (repo-name)
-  (let* ((repo (propertize (format " %s " repo-name)
+  (let* ((repo (propertize (if multi-magit-status-heading-padding
+                               (format " %s " repo-name)
+                             repo-name)
                            'font-lock-face 'multi-magit-repo-heading))
          (branch (--if-let (magit-get-current-branch)
                      (propertize it 'font-lock-face 'multi-magit-branch-heading)
