@@ -619,9 +619,6 @@ repositories are displayed."
                                       'keymap
                                       multi-magit-repo-header-section-map))))
 
-(defun multi-magit-status-refresh-buffer ()
-  (multi-magit-status))
-
 (defvar multi-magit-status-buffer-name "*Multi-Magit Status*")
 
 (defun multi-magit--around-magit-mode-get-buffers (original-function &rest args)
@@ -650,7 +647,9 @@ after running git for side-effects on a selected repository."
                    multi-magit-refresh-status-buffer
                    (member default-directory multi-magit-selected-repositories)
                    (get-buffer multi-magit-status-buffer-name))
-    (multi-magit--refresh-status it)))
+    ;; `multi-magit-status' refreshes the buffer when it displays it.
+    (when (get-buffer-window it t)
+      (multi-magit--refresh-status it))))
 
 (add-hook 'magit-post-refresh-hook 'multi-magit--maybe-refresh)
 
@@ -693,23 +692,27 @@ after running git for side-effects on a selected repository."
     (--map (cdr (assoc it repo->name))
            multi-magit-selected-repositories)))
 
-(defun multi-magit--refresh-status (buffer)
+(defun multi-magit-status-refresh-buffer ()
+  "Insert the sections of the `multi-magit-status' buffer.
+This is the refresh function of `multi-magit-status-mode', which
+`magit-refresh-buffer' calls."
+  (magit-insert-section (multi-magit-toplevel)
+    (cl-loop for repo in multi-magit-selected-repositories
+             for repo-name in (multi-magit--selected-repo-names)
+             do (let ((default-directory repo)
+                      (magit--default-directory repo))
+                  (magit-insert-section (multi-magit-status repo)
+                    (multi-magit--insert-repo-heading repo-name)
+                    (insert "\n")
+                    (magit-run-section-hook 'multi-magit-status-sections-hook))))))
+
+(defun multi-magit--refresh-status (buffer &optional created)
   (with-current-buffer buffer
-    (let ((inhibit-read-only t))
-      (erase-buffer)
-      (multi-magit--set-current-repo)
-      (multi-magit-status-mode)
-      (save-excursion
-        (magit-insert-section (multi-magit-toplevel)
-          (cl-loop for repo in multi-magit-selected-repositories
-                   for repo-name in (multi-magit--selected-repo-names)
-                   do (let ((default-directory repo)
-                            (magit--default-directory repo))
-                        (magit-insert-section (multi-magit-status repo)
-                          (multi-magit--insert-repo-heading repo-name)
-                          (insert "\n")
-                          (magit-run-section-hook 'multi-magit-status-sections-hook))))))
-      (add-hook 'post-command-hook 'multi-magit--set-current-repo nil :local))))
+    (multi-magit--set-current-repo)
+    ;; As for any Magit buffer: besides inserting the sections,
+    ;; `magit-refresh-buffer' gives them their initial visibility,
+    ;; keeps point on its section and runs `magit-refresh-buffer-hook'.
+    (magit-refresh-buffer created)))
 
 ;;;###autoload
 (defun multi-magit-status ()
@@ -718,9 +721,19 @@ after running git for side-effects on a selected repository."
       (when (y-or-n-p "`multi-magit-selected-repositories' is empty. Would you \
 like to select some using `multi-magit-list-repositories'? ")
         (multi-magit-list-repositories))
-    (let ((buffer (get-buffer-create multi-magit-status-buffer-name)))
-      (multi-magit--refresh-status buffer)
-      (magit-display-buffer buffer))))
+    (let* ((buffer (get-buffer-create multi-magit-status-buffer-name))
+           (created (with-current-buffer buffer
+                      (unless (derived-mode-p 'multi-magit-status-mode)
+                        (multi-magit-status-mode)
+                        (add-hook 'post-command-hook
+                                  'multi-magit--set-current-repo nil :local)
+                        t))))
+      ;; Display the buffer before refreshing it, as `magit-setup-buffer'
+      ;; does.  To keep point, refreshing a buffer that no window shows
+      ;; makes the selected window show it for a moment, and
+      ;; `display-buffer' then takes that window for one that showed it.
+      (magit-display-buffer buffer)
+      (multi-magit--refresh-status buffer created))))
 
 ;;;; Magit-status Sections
 
