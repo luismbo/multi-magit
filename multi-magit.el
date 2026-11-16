@@ -624,8 +624,11 @@ repositories are displayed."
 (defun multi-magit--around-magit-mode-get-buffers (original-function &rest args)
   (let ((buffers (apply original-function args))
         (multi-magit-status-buffer (get-buffer multi-magit-status-buffer-name)))
+    ;; `original-function' already returns the status buffer when its
+    ;; current repository is the one in question.
     (if (and multi-magit-status-buffer
-             (member default-directory multi-magit-selected-repositories))
+             (member default-directory multi-magit-selected-repositories)
+             (not (memq multi-magit-status-buffer buffers)))
         (cons multi-magit-status-buffer buffers)
         buffers)))
 
@@ -642,9 +645,21 @@ after running git for side-effects on a selected repository."
   :group 'multi-magit
   :type 'boolean)
 
+(defvar multi-magit--status-refreshed nil
+  "Whether the status buffer was refreshed since `magit-pre-refresh-hook'.
+`magit-refresh' and `magit-refresh-all' may have refreshed it
+already, the former when it is the current buffer and the latter
+because `magit-mode-get-buffers' includes it.")
+
+(defun multi-magit--reset-status-refreshed ()
+  (setq multi-magit--status-refreshed nil))
+
+(add-hook 'magit-pre-refresh-hook 'multi-magit--reset-status-refreshed)
+
 (defun multi-magit--maybe-refresh ()
   (--when-let (and magit-refresh-status-buffer
                    multi-magit-refresh-status-buffer
+                   (not multi-magit--status-refreshed)
                    (member default-directory multi-magit-selected-repositories)
                    (get-buffer multi-magit-status-buffer-name))
     ;; `multi-magit-status' refreshes the buffer when it displays it.
@@ -696,6 +711,7 @@ after running git for side-effects on a selected repository."
   "Insert the sections of the `multi-magit-status' buffer.
 This is the refresh function of `multi-magit-status-mode', which
 `magit-refresh-buffer' calls."
+  (setq multi-magit--status-refreshed t)
   (magit-insert-section (multi-magit-toplevel)
     (cl-loop for repo in multi-magit-selected-repositories
              for repo-name in (multi-magit--selected-repo-names)
