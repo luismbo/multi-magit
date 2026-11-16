@@ -605,6 +605,22 @@ an item of the section above it."
   :group 'multi-magit
   :type 'boolean)
 
+(defcustom multi-magit-status-heading-blank-line t
+  "Whether a blank line follows each repository heading.
+In a `multi-magit-status' buffer, the blank line comes between the
+heading and the sections of the repository."
+  :group 'multi-magit
+  :type 'boolean)
+
+(defcustom multi-magit-status-repository-separator nil
+  "Whether a blank line separates repositories.
+In a `multi-magit-status' buffer, this line comes between the sections
+of two repositories, so hiding a section never hides it.  It replaces
+the blank line that ends the last section of a repository, which hiding
+that section hides too."
+  :group 'multi-magit
+  :type 'boolean)
+
 (defface multi-magit-repo-heading
   '((((class color) (background light)) :inherit magit-section-heading :box t)
     (((class color) (background  dark)) :inherit magit-section-heading :box t))
@@ -718,11 +734,20 @@ after running git for side-effects on a selected repository."
         (magit-insert-section (multi-magit-toplevel)
           (cl-loop for repo in multi-magit-selected-repositories
                    for repo-name in (multi-magit--selected-repo-names)
+                   for first = t then nil
                    do (let ((default-directory repo)
                             (magit--default-directory repo))
+                        (when (and multi-magit-status-repository-separator
+                                   (not first))
+                          ;; In place of the blank line that ends the previous
+                          ;; repository, which belongs to its last section.
+                          (when (looking-back "\n\n" (- (point) 2))
+                            (delete-char -1))
+                          (insert "\n"))
                         (magit-insert-section (multi-magit-status repo)
                           (multi-magit--insert-repo-heading repo-name)
-                          (insert "\n")
+                          (when multi-magit-status-heading-blank-line
+                            (insert "\n"))
                           (magit-run-section-hook 'multi-magit-status-sections-hook))))))
       (add-hook 'post-command-hook 'multi-magit--set-current-repo nil :local))))
 
