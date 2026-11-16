@@ -175,9 +175,9 @@ merge-base betweenn HEAD and @{upstream}."
               (delete-region (oref target-section start)
                              (1+ (oref target-section end)))
               (insert (propertize (concat "[" repo-name "]")
-                                  'face (if (= arg 0)
-                                            'magit-process-ok
-                                          'magit-process-ng)))
+                                  'font-lock-face (if (= arg 0)
+                                                      'magit-process-ok
+                                                    'magit-process-ng)))
               (insert-buffer-substring process-buf
                                        (oref section start)
                                        (oref section end)))))))))
@@ -317,7 +317,7 @@ Show S if there is at least one staged file."
 
 (defun multi-magit-repolist-column-repo (spec)
   "Insert the identification of the repository."
-  (propertize (cadr (assq :id spec)) 'face 'multi-magit-repolist-repo-face))
+  (propertize (cadr (assq :id spec)) 'font-lock-face 'multi-magit-repolist-repo-face))
 
 (defcustom multi-magit-repolist-columns
   '(("Name"    25 magit-repolist-column-ident nil)
@@ -580,7 +580,7 @@ repositories are displayed."
                          using (hash-value info)
                          collect (cl-destructuring-bind (repos paths last-changed) info
                                    (list (cons branch paths)
-                                         (vector (propertize branch 'face 'magit-branch-local)
+                                         (vector (propertize branch 'font-lock-face 'magit-branch-local)
                                                  last-changed
                                                  (mapconcat 'identity repos ", ")))))))
         (tabulated-list-print)
@@ -614,10 +614,10 @@ repositories are displayed."
 
 (defun multi-magit--insert-repo-heading (repo-name)
   (let* ((repo (propertize (format " %s " repo-name)
-                           'face 'multi-magit-repo-heading))
+                           'font-lock-face 'multi-magit-repo-heading))
          (branch (--if-let (magit-get-current-branch)
-                     (propertize it 'face 'magit-branch-current)
-                   (propertize "(detached)" 'face 'warning))))
+                     (propertize it 'font-lock-face 'magit-branch-current)
+                   (propertize "(detached)" 'font-lock-face 'warning))))
     (magit-insert-heading (propertize (concat repo " " branch)
                                       'keymap
                                       multi-magit-repo-header-section-map))))
@@ -770,18 +770,18 @@ like to select some using `multi-magit-list-repositories'? ")
            (branch-format (format "%%-%is " (min 25 (/ (window-width) 3)))))
       (magit-insert-heading (format "%s (%d)"
                                     (propertize "Selected repositories"
-                                                'face 'magit-section-heading)
+                                                'font-lock-face 'magit-section-heading)
                                     (length repos)))
       (cl-loop for repo in repos
                for repo-name in repo-names
                do (let ((default-directory repo))
                     (magit-insert-section (multi-magit-repo repo t)
                       (insert (propertize (format path-format repo-name)
-                                          'face 'magit-diff-file-heading))
+                                          'font-lock-face 'magit-diff-file-heading))
                       (insert (format branch-format
                                       (--if-let (magit-get-current-branch)
-                                          (propertize it 'face 'magit-branch-local)
-                                        (propertize "(detached)" 'face 'warning))))
+                                          (propertize it 'font-lock-face 'magit-branch-local)
+                                        (propertize "(detached)" 'font-lock-face 'warning))))
                       (insert (mapconcat
                                'identity
                                (remove nil
