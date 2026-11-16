@@ -92,7 +92,10 @@ merge-base betweenn HEAD and @{upstream}."
         (magit-git-wash #'magit-diff-wash-diffs
                         "diff" merge-base "HEAD" "--stat" "--numstat" "--no-prefix")
         (insert "\n")
-        (magit-insert-log (format "@{upstream}.."))))))
+        (if (fboundp 'magit--insert-log)
+            (magit--insert-log nil "@{upstream}..")
+          (with-no-warnings
+            (magit-insert-log "@{upstream}..")))))))
 
 (defvar multi-magit-selected-repositories nil
   "The list of selected repositories that will be displayed by
@@ -563,15 +566,15 @@ repositories are displayed."
         (let ((branch->info (make-hash-table :test 'equal)))
           (cl-loop for (repo . path) in (multi-magit--all-repositories)
                    for default-directory = path
-                   do (-map (-lambda ((branch mtime))
-                              (let ((info (or (gethash branch branch->info)
-                                              (setf (gethash branch branch->info)
-                                                    (list nil nil nil)))))
-                                (push repo (cl-first info))
-                                (push path (cl-second info))
-                                (setf (cl-third info)
-                                      (max (or (cl-third info) 0) mtime))))
-                            (multi-magit--repo-branches+mtime path)))
+                   do (-each (multi-magit--repo-branches+mtime path)
+                        (-lambda ((branch mtime))
+                          (let ((info (or (gethash branch branch->info)
+                                          (setf (gethash branch branch->info)
+                                                (list nil nil nil)))))
+                            (push repo (cl-first info))
+                            (push path (cl-second info))
+                            (setf (cl-third info)
+                                  (max (or (cl-third info) 0) mtime))))))
           (setq tabulated-list-entries
                 (cl-loop for branch being the hash-keys in branch->info
                          using (hash-value info)
