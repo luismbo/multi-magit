@@ -25,7 +25,7 @@
   :link '(url-link "https://github.com/luismbo/multi-magit")
   :group 'magit-extensions)
 
-(defgroup magit-faces nil
+(defgroup multi-magit-faces nil
   "Faces used by Multi-Magit."
   :group 'multi-magit)
 
