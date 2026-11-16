@@ -606,6 +606,11 @@ repositories are displayed."
   "Face for repository headings."
   :group 'multi-magit-faces)
 
+(defface multi-magit-branch-heading
+  '((t :inherit magit-branch-current))
+  "Face for the current branch in repository headings."
+  :group 'multi-magit-faces)
+
 (defvar multi-magit-repo-header-section-map
   (let ((map (make-sparse-keymap)))
     (define-key map [return] 'magit-status)
@@ -616,7 +621,7 @@ repositories are displayed."
   (let* ((repo (propertize (format " %s " repo-name)
                            'font-lock-face 'multi-magit-repo-heading))
          (branch (--if-let (magit-get-current-branch)
-                     (propertize it 'font-lock-face 'magit-branch-current)
+                     (propertize it 'font-lock-face 'multi-magit-branch-heading)
                    (propertize "(detached)" 'font-lock-face 'warning))))
     (magit-insert-heading (propertize (concat repo " " branch)
                                       'keymap
