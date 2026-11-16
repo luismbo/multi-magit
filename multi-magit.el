@@ -636,8 +636,11 @@ repositories are displayed."
 (defun multi-magit--around-magit-mode-get-buffers (original-function &rest args)
   (let ((buffers (apply original-function args))
         (multi-magit-status-buffer (get-buffer multi-magit-status-buffer-name)))
+    ;; `original-function' already returns the status buffer when its
+    ;; current repository is the one in question.
     (if (and multi-magit-status-buffer
-             (member default-directory multi-magit-selected-repositories))
+             (member default-directory multi-magit-selected-repositories)
+             (not (memq multi-magit-status-buffer buffers)))
         (cons multi-magit-status-buffer buffers)
         buffers)))
 
