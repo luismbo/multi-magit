@@ -50,7 +50,10 @@ We recommend binding it globally to <kbd>C-x G</kbd>:
 `multi-magit-status-sections-hook` determines which sections will be
 inserted for each repo. It accepts the same sections as
 `magit-status-sections-hook` but defaults to lightweight sections
-focused on giving you a quick overview of each repository.
+focused on giving you a quick overview of each repository.  Its
+untracked, unstaged and staged sections share one `git status` per
+repository, and run `git diff` only when that status shows something
+to diff.
 
 #### [custom variable] multi-magit-refresh-status-buffer
 
