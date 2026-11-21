@@ -52,6 +52,11 @@ inserted for each repo. It accepts the same sections as
 `magit-status-sections-hook` but defaults to lightweight sections
 focused on giving you a quick overview of each repository.
 
+With [magit-git2](https://github.com/kostafey/magit-git2), which
+answers some of Magit's git calls without starting git,
+`multi-magit-insert-committed-changes` skips its `git diff` in a
+repository with nothing to push.
+
 #### [custom variable] multi-magit-refresh-status-buffer
 
 Whether the multi-magit-status buffer is refreshed after running git.
