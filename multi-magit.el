@@ -151,7 +151,8 @@ PREDICATE is called with the X, Y and PATH of an entry."
 (defun multi-magit--staged-p (x y _path)
   "Whether `git diff --cached' shows the entry X Y.
 A change in the index, but also a file added with intent to add (Y is
-A, or R when renamed in the worktree): that diff shows it as new."
+A, or R when renamed in the worktree): Magit passes that diff
+--ita-visible-in-index, so it shows the file as new."
   (or (not (memq x '(?\s ?? ?!)))
       (memq y '(?A ?R))))
 
