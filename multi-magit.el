@@ -711,11 +711,17 @@ This is the refresh function of `multi-magit-status-mode', which
   (magit-insert-section (multi-magit-toplevel)
     (cl-loop for repo in multi-magit-selected-repositories
              for repo-name in (multi-magit--selected-repo-names)
+             for first = t then nil
              do (let ((default-directory repo)
                       (magit--default-directory repo))
+                  (unless first
+                    ;; In place of the blank line that ends the previous
+                    ;; repository, which belongs to its last section.
+                    (when (looking-back "\n\n" (- (point) 2))
+                      (delete-char -1))
+                    (insert "\n"))
                   (magit-insert-section (multi-magit-status repo)
                     (multi-magit--insert-repo-heading repo-name)
-                    (insert "\n")
                     (magit-run-section-hook 'multi-magit-status-sections-hook))))))
 
 (defun multi-magit--refresh-status (buffer &optional created)
