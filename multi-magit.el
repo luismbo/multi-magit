@@ -109,10 +109,10 @@ Its choice: the local value of `magit-status-show-untracked-files',
 then the local value of the git variable status.showUntrackedFiles,
 then the global value of `magit-status-show-untracked-files', which
 lists no untracked files when nil.
-Magit older than 4.3.0 has no such variable and lists the untracked
+Magit older than 4.3.0 has no such option and lists the untracked
 files itself, so the status leaves them out."
   (format "--untracked-files=%s"
-          (if (not (boundp 'magit-status-show-untracked-files))
+          (if (not (custom-variable-p 'magit-status-show-untracked-files))
               "no"
             (pcase (or (and (local-variable-p
                              'magit-status-show-untracked-files)
@@ -177,7 +177,7 @@ With a file filter in the buffer, or with Magit older than 4.3.0,
 whose untracked files the status does not list, Magit's own section
 lists them."
   (if (or magit-buffer-diff-files
-          (not (boundp 'magit-status-show-untracked-files)))
+          (not (custom-variable-p 'magit-status-show-untracked-files)))
       (magit-insert-untracked-files)
     (magit-insert-files 'untracked
                         (lambda (_files)
