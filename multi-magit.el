@@ -618,7 +618,11 @@ repositories are displayed."
   "Keymap for repository headers.")
 
 (defun multi-magit--insert-repo-heading (repo-name)
-  (let* ((repo (propertize (format " %s " repo-name)
+  (let* ((box (face-attribute 'multi-magit-repo-heading :box nil t))
+         ;; The spaces only keep the face's box off the name.
+         (repo (propertize (if (memq box '(nil unspecified))
+                               repo-name
+                             (format " %s " repo-name))
                            'font-lock-face 'multi-magit-repo-heading))
          (branch (--if-let (magit-get-current-branch)
                      (propertize it 'font-lock-face 'multi-magit-branch-heading)
