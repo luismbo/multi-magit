@@ -178,16 +178,18 @@ lists them."
 
 ;;;###autoload
 (defun multi-magit-insert-unstaged-changes ()
-  "Like `magit-insert-unstaged-changes', but no `git diff' runs when
-`git status' shows nothing unstaged: the section would be empty."
+  "Like `magit-insert-unstaged-changes', skipping a needless `git diff'.
+No `git diff' runs when `git status' shows nothing unstaged: the
+section would be empty."
   (when (or magit-buffer-diff-files
             (multi-magit--status-has #'multi-magit--unstaged-p))
     (magit-insert-unstaged-changes)))
 
 ;;;###autoload
 (defun multi-magit-insert-staged-changes ()
-  "Like `magit-insert-staged-changes', but no `git diff' runs when
-`git status' shows nothing staged: the section would be empty."
+  "Like `magit-insert-staged-changes', skipping a needless `git diff'.
+No `git diff' runs when `git status' shows nothing staged: the section
+would be empty."
   (when (or magit-buffer-diff-files
             (multi-magit--status-has #'multi-magit--staged-p))
     (magit-insert-staged-changes)))
