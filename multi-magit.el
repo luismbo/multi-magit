@@ -107,7 +107,8 @@ as (ENTRIES), what it read.  With the value `none' nothing is stored.")
   "The --untracked-files argument `magit-insert-untracked-files' would use.
 Its choice: the local value of `magit-status-show-untracked-files',
 then the local value of the git variable status.showUntrackedFiles,
-then the global value of `magit-status-show-untracked-files'.
+then the global value of `magit-status-show-untracked-files', which
+lists no untracked files when nil.
 Magit older than 4.3.0 has no such variable and lists the untracked
 files itself, so the status leaves them out."
   (format "--untracked-files=%s"
@@ -121,7 +122,7 @@ files itself, so the status leaves them out."
                          ((or "yes" "on" "true" "1") t)
                          ("all" 'all))
                        magit-status-show-untracked-files)
-              ('no "no")
+              ((or 'nil 'no) "no")
               ('all "all")
               (_ "normal")))))
 
