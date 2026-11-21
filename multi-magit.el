@@ -97,12 +97,6 @@ merge-base betweenn HEAD and @{upstream}."
           (with-no-warnings
             (magit-insert-log "@{upstream}..")))))))
 
-(defvar multi-magit--status 'none
-  "The `git status' entries of the repository whose sections are inserted.
-`multi-magit-status-refresh-buffer' binds this to nil for each
-repository, and `multi-magit--status-entries' then stores there,
-as (ENTRIES), what it read.  With the value `none' nothing is stored.")
-
 (defun multi-magit--untracked-files-argument ()
   "The --untracked-files argument `magit-insert-untracked-files' would use.
 Its choice: the local value of `magit-status-show-untracked-files',
@@ -129,10 +123,10 @@ files itself, so the status leaves them out."
 (defun multi-magit--status-entries ()
   "The entries of `git status --porcelain' in the current repository.
 A list of (X Y PATH), X and Y being the status characters of PATH in
-the index and in the worktree.  Read once per repository and refresh of
-the `multi-magit-status' buffer, which its sections share."
-  (if (consp multi-magit--status)
-      (car multi-magit--status)
+the index and in the worktree.  Read once per buffer, repository and
+refresh, which the sections of the buffer share."
+  (magit--with-refresh-cache
+      (list 'multi-magit--status-entries (current-buffer) default-directory)
     (let ((items (magit-git-items "status" "-z" "--porcelain"
                                   (multi-magit--untracked-files-argument)
                                   "--"))
@@ -147,10 +141,7 @@ the `multi-magit-status' buffer, which its sections share."
               ;; item of its own.
               (when (or (memq x '(?R ?C)) (memq y '(?R ?C)))
                 (pop items))))))
-      (setq entries (nreverse entries))
-      (unless (eq multi-magit--status 'none)
-        (setq multi-magit--status (list entries)))
-      entries)))
+      (nreverse entries))))
 
 (defun multi-magit--status-has (predicate)
   "Whether PREDICATE holds for some entry of the status.
@@ -832,8 +823,7 @@ This is the refresh function of `multi-magit-status-mode', which
              for repo-name in (multi-magit--selected-repo-names)
              for first = t then nil
              do (let ((default-directory repo)
-                      (magit--default-directory repo)
-                      (multi-magit--status nil))
+                      (magit--default-directory repo))
                   (unless first
                     ;; In place of the blank line that ends the previous
                     ;; repository, which belongs to its last section.
