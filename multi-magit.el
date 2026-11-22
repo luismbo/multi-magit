@@ -97,6 +97,103 @@ merge-base betweenn HEAD and @{upstream}."
           (with-no-warnings
             (magit-insert-log "@{upstream}..")))))))
 
+(defun multi-magit--untracked-files-argument ()
+  "The --untracked-files argument `magit-insert-untracked-files' would use.
+Its choice: the local value of `magit-status-show-untracked-files',
+then the local value of the git variable status.showUntrackedFiles,
+then the global value of `magit-status-show-untracked-files', which
+lists no untracked files when nil.
+Magit older than 4.3.0 has no such option and lists the untracked
+files itself, so the status leaves them out."
+  (format "--untracked-files=%s"
+          (if (not (custom-variable-p 'magit-status-show-untracked-files))
+              "no"
+            (pcase (or (and (local-variable-p
+                             'magit-status-show-untracked-files)
+                            magit-status-show-untracked-files)
+                       (pcase (magit-get "--local" "status.showUntrackedFiles")
+                         ((or "no" "off" "false" "0") 'no)
+                         ((or "yes" "on" "true" "1") t)
+                         ("all" 'all))
+                       magit-status-show-untracked-files)
+              ((or 'nil 'no) "no")
+              ('all "all")
+              (_ "normal")))))
+
+(defun multi-magit--status-entries ()
+  "The entries of `git status --porcelain' in the current repository.
+A list of (X Y PATH), X and Y being the status characters of PATH in
+the index and in the worktree.  Read once per buffer, repository and
+refresh, which the sections of the buffer share."
+  (magit--with-refresh-cache
+      (list 'multi-magit--status-entries (current-buffer) default-directory)
+    (let ((items (magit-git-items "status" "-z" "--porcelain"
+                                  (multi-magit--untracked-files-argument)
+                                  "--"))
+          entries)
+      (while items
+        (let ((item (pop items)))
+          (when (> (length item) 3)
+            (let ((x (aref item 0))
+                  (y (aref item 1)))
+              (push (list x y (substring item 3)) entries)
+              ;; The original path of a rename or copy follows as an
+              ;; item of its own.
+              (when (or (memq x '(?R ?C)) (memq y '(?R ?C)))
+                (pop items))))))
+      (nreverse entries))))
+
+(defun multi-magit--status-has (predicate)
+  "Whether PREDICATE holds for some entry of the status.
+PREDICATE is called with the X, Y and PATH of an entry."
+  (--some (apply predicate it) (multi-magit--status-entries)))
+
+(defun multi-magit--staged-p (x y _path)
+  "Whether `git diff --cached' shows the entry X Y.
+A change in the index, but also a file added with intent to add (Y is
+A, or R when renamed in the worktree): Magit passes that diff
+--ita-visible-in-index, so it shows the file as new."
+  (or (not (memq x '(?\s ?? ?!)))
+      (memq y '(?A ?R))))
+
+(defun multi-magit--unstaged-p (_x y _path)
+  "Whether `git diff' shows the entry X Y: a change in the worktree."
+  (not (memq y '(?\s ?? ?!))))
+
+;;;###autoload
+(defun multi-magit-insert-untracked-files ()
+  "Like `magit-insert-untracked-files', from the shared `git status'.
+The status also tells `multi-magit-insert-unstaged-changes' and
+`multi-magit-insert-staged-changes' whether to run `git diff'.
+With a file filter in the buffer, or with Magit older than 4.3.0,
+whose untracked files the status does not list, Magit's own section
+lists them."
+  (if (or magit-buffer-diff-files
+          (not (custom-variable-p 'magit-status-show-untracked-files)))
+      (magit-insert-untracked-files)
+    (magit-insert-files 'untracked
+                        (lambda (_files)
+                          (--keep (and (eq (car it) ??) (nth 2 it))
+                                  (multi-magit--status-entries))))))
+
+;;;###autoload
+(defun multi-magit-insert-unstaged-changes ()
+  "Like `magit-insert-unstaged-changes', skipping a needless `git diff'.
+No `git diff' runs when `git status' shows nothing unstaged: the
+section would be empty."
+  (when (or magit-buffer-diff-files
+            (multi-magit--status-has #'multi-magit--unstaged-p))
+    (magit-insert-unstaged-changes)))
+
+;;;###autoload
+(defun multi-magit-insert-staged-changes ()
+  "Like `magit-insert-staged-changes', skipping a needless `git diff'.
+No `git diff' runs when `git status' shows nothing staged: the section
+would be empty."
+  (when (or magit-buffer-diff-files
+            (multi-magit--status-has #'multi-magit--staged-p))
+    (magit-insert-staged-changes)))
+
 (defvar multi-magit-selected-repositories nil
   "The list of selected repositories that will be displayed by
 `multi-magit-status'.")
@@ -591,9 +688,9 @@ repositories are displayed."
 ;;;; Multi-Magit Status
 
 (defcustom multi-magit-status-sections-hook
-  '(magit-insert-untracked-files
-    magit-insert-unstaged-changes
-    magit-insert-staged-changes
+  '(multi-magit-insert-untracked-files
+    multi-magit-insert-unstaged-changes
+    multi-magit-insert-staged-changes
     ;; multi-magit-insert-uncommitted-changes
     multi-magit-insert-committed-changes)
   "Hook run to insert section into a `multi-magit-status' buffer."
