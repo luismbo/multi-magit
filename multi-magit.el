@@ -83,8 +83,8 @@
 
 ;;;###autoload
 (defun multi-magit-insert-committed-changes ()
-  "Insert a diffstat and commit log of commits since the
-merge-base between HEAD and @{upstream}."
+  "Insert a diffstat and log of the commits not yet pushed upstream.
+These are the commits since the merge-base of HEAD and @{upstream}."
   (let ((merge-base (magit-git-string "merge-base" "HEAD" "@{upstream}")))
     (when (and merge-base
                ;; When HEAD is the merge-base, the diff is empty.
