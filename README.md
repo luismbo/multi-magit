@@ -55,6 +55,11 @@ untracked, unstaged and staged sections share one `git status` per
 repository, and run `git diff` only when that status shows something
 to diff.
 
+With [magit-git2](https://github.com/kostafey/magit-git2), which
+answers some of Magit's git calls without starting git,
+`multi-magit-insert-committed-changes` skips its `git diff` in a
+repository with nothing to push.
+
 #### [custom variable] multi-magit-refresh-status-buffer
 
 Whether the multi-magit-status buffer is refreshed after running git.

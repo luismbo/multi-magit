@@ -86,7 +86,13 @@
   "Insert a diffstat and commit log of commits since the
 merge-base betweenn HEAD and @{upstream}."
   (let ((merge-base (magit-git-string "merge-base" "HEAD" "@{upstream}")))
-    (when merge-base
+    (when (and merge-base
+               ;; When HEAD is the merge-base, the diff is empty.
+               ;; magit-git2 answers `rev-parse' without git, so
+               ;; checking first spares the diff; with git, the check
+               ;; would cost a process of its own.
+               (not (and (eq (bound-and-true-p magit-git2-mode) 'on)
+                         (equal merge-base (magit-rev-verify "HEAD")))))
       (magit-insert-section (diffstat)
         (magit-insert-heading "Committed changes")
         (magit-git-wash #'magit-diff-wash-diffs
