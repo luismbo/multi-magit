@@ -3,6 +3,7 @@
 ;; Copyright (C) 2017-2026 Luís Oliveira and contributors
 
 ;; Author: Luis Oliveira <loliveira@common-lisp.net>
+;; Assisted-by: Claude:claude-opus-5-5
 ;; URL: https://github.com/luismbo/multi-magit
 ;; Package-Requires: ((emacs "25.1") (magit "3.3.0") (dash "2.11.0"))
 ;; Keywords: git tools vc magit
@@ -124,6 +125,8 @@ These are the commits since the merge-base of HEAD and @{upstream}."
         (insert "\n")
         (if (fboundp 'magit--insert-log)
             (magit--insert-log nil "@{upstream}..")
+          ;; For Magit before 4.0.0, which made `magit-insert-log'
+          ;; obsolete.  `with-suppressed-warnings' would need Emacs 27.1.
           (with-no-warnings
             (magit-insert-log "@{upstream}..")))))))
 
@@ -618,7 +621,7 @@ repositories are displayed."
                     (> (elt (cl-second e1) 1)
                        (elt (cl-second e2) 1))))
          ("Repositories" 99 t)])
-  (setq tabulated-list-printer 'multi-magit--tabulated-list-printer)
+  (setq tabulated-list-printer #'multi-magit--tabulated-list-printer)
   (setq tabulated-list-padding 2)
   (tabulated-list-init-header))
 
@@ -713,7 +716,7 @@ repositories are displayed."
                                    (list (cons branch paths)
                                          (vector (propertize branch 'font-lock-face 'magit-branch-local)
                                                  last-changed
-                                                 (mapconcat 'identity repos ", ")))))))
+                                                 (mapconcat #'identity repos ", ")))))))
         (tabulated-list-print)
         (switch-to-buffer (current-buffer)))
     (message "You need to customize `magit-repository-directories' %s"
@@ -777,7 +780,7 @@ repositories are displayed."
 
 (advice-add 'magit-mode-get-buffers
             :around
-            'multi-magit--around-magit-mode-get-buffers)
+            #'multi-magit--around-magit-mode-get-buffers)
 
 (defcustom multi-magit-refresh-status-buffer t
   "Whether the multi-magit-status buffer is refreshed after running git.
@@ -797,7 +800,7 @@ because `magit-mode-get-buffers' includes it.")
 (defun multi-magit--reset-status-refreshed ()
   (setq multi-magit--status-refreshed nil))
 
-(add-hook 'magit-pre-refresh-hook 'multi-magit--reset-status-refreshed)
+(add-hook 'magit-pre-refresh-hook #'multi-magit--reset-status-refreshed)
 
 (defun multi-magit--maybe-refresh ()
   (--when-let (and magit-refresh-status-buffer
@@ -809,7 +812,7 @@ because `magit-mode-get-buffers' includes it.")
     (when (get-buffer-window it t)
       (multi-magit--refresh-status it))))
 
-(add-hook 'magit-post-refresh-hook 'multi-magit--maybe-refresh)
+(add-hook 'magit-post-refresh-hook #'multi-magit--maybe-refresh)
 
 (defun multi-magit--set-current-repo ()
   "Set `default-directory' to the repository at point.
@@ -900,7 +903,7 @@ like to select some using `multi-magit-list-repositories'? ")
                       (unless (derived-mode-p 'multi-magit-status-mode)
                         (multi-magit-status-mode)
                         (add-hook 'post-command-hook
-                                  'multi-magit--set-current-repo nil :local)
+                                  #'multi-magit--set-current-repo nil :local)
                         t))))
       ;; Display the buffer before refreshing it, as `magit-setup-buffer'
       ;; does.  To keep point, refreshing a buffer that no window shows
@@ -941,7 +944,7 @@ like to select some using `multi-magit-list-repositories'? ")
     (let* ((repos multi-magit-selected-repositories)
            (repo-names (multi-magit--selected-repo-names))
            (path-format (format "%%-%is "
-                                (min (apply 'max (mapcar 'length repo-names))
+                                (min (apply #'max (mapcar #'length repo-names))
                                      (/ (window-width) 2))))
            (branch-format (format "%%-%is " (min 25 (/ (window-width) 3)))))
       (magit-insert-heading (format "%s (%d)"
@@ -959,7 +962,7 @@ like to select some using `multi-magit-list-repositories'? ")
                                           (propertize it 'font-lock-face 'magit-branch-local)
                                         (propertize "(detached)" 'font-lock-face 'warning))))
                       (insert (mapconcat
-                               'identity
+                               #'identity
                                (remove nil
                                        (list (--when-let (magit-untracked-files)
                                                (format "%d untracked" (length it)))
@@ -970,6 +973,23 @@ like to select some using `multi-magit-list-repositories'? ")
                                ", "))
                       (insert "\n"))))))
   (insert "\n"))
+
+(defun multi-magit-unload-function ()
+  "Undo the global changes multi-magit makes, for `unload-feature'.
+Remove its advice on Magit functions, its Magit hooks and its
+section type."
+  (advice-remove 'magit-process-finish
+                 #'multi-magit--after-magit-process-finish)
+  (advice-remove 'magit-process-setup
+                 #'multi-magit--around-magit-process-setup)
+  (advice-remove 'magit-mode-get-buffers
+                 #'multi-magit--around-magit-mode-get-buffers)
+  (remove-hook 'magit-pre-refresh-hook #'multi-magit--reset-status-refreshed)
+  (remove-hook 'magit-post-refresh-hook #'multi-magit--maybe-refresh)
+  (setq magit--section-type-alist
+        (assq-delete-all 'multi-magit-repo magit--section-type-alist))
+  ;; Let `unload-feature' do the rest of the unloading.
+  nil)
 
 (provide 'multi-magit)
 ;;; multi-magit.el ends here
