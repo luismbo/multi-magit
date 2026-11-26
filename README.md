@@ -106,3 +106,8 @@ file count.
                         'multi-magit-insert-repos-overview
                          nil t)
 ```
+
+## License
+
+multi-magit is licensed under the GNU General Public License, version 3
+or later. See [LICENSE](LICENSE).

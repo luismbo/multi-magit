@@ -1,15 +1,39 @@
-;;; multi-magit.el --- multi-repo support for Magit  -*- lexical-binding: t -*-
+;;; multi-magit.el --- Multi-repo support for Magit  -*- lexical-binding: t -*-
+
+;; Copyright (C) 2017-2026 Luís Oliveira and contributors
 
 ;; Author: Luis Oliveira <loliveira@common-lisp.net>
 ;; URL: https://github.com/luismbo/multi-magit
-;; Package-Requires: ((emacs "24.4") (magit "3.3.0") (dash "2.11.0"))
+;; Package-Requires: ((emacs "25.1") (magit "3.3.0") (dash "2.11.0"))
 ;; Keywords: git tools vc magit
-;; Version: 0.1
+;; Version: 1.0
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
 ;; multi-magit, Multi-Repository Magit, is a set of Magit extensions for
-;; handling several respositories simultaneously.
+;; handling several repositories simultaneously.
+;;
+;; Select the repositories to work on with
+;; `multi-magit-list-repositories', then use `multi-magit-status' to
+;; see the status of all of them in a single buffer.  Other commands,
+;; such as `multi-magit-list-branches' and `multi-magit-checkout',
+;; operate on all selected repositories at once.  See the README for
+;; details.
 
 ;;; Code:
 
@@ -37,11 +61,11 @@
   "Keymap for `multi-magit-status-mode'.")
 
 (define-derived-mode multi-magit-status-mode magit-status-mode "Multi-Magit"
-  "A magit-status for multiple repositories."
+  "Major mode for showing the `magit-status' of multiple repositories."
   :group 'multi-magit)
 
 (easy-menu-define multi-magit-status-mode-menu multi-magit-status-mode-map
-  "Multi-Magit menu"
+  "Multi-Magit menu."
   '("Multi-Magit"
     ["Checkout"          multi-magit-checkout t]
     ["Delete branches"   multi-magit-branch-delete t]
@@ -201,8 +225,9 @@ would be empty."
     (magit-insert-staged-changes)))
 
 (defvar multi-magit-selected-repositories nil
-  "The list of selected repositories that will be displayed by
-`multi-magit-status'.")
+  "The list of selected repositories.
+These are the repositories that `multi-magit-status' displays and
+that the other multi-magit commands operate on.")
 
 (defun multi-magit--repo-name (repo)
   (file-name-nondirectory (directory-file-name repo)))
@@ -226,7 +251,7 @@ would be empty."
   (interactive)
   (let ((repo (magit-toplevel directory)))
     (if (null repo)
-        (user-error "multi-magit: couldn't find a repository here.")
+        (user-error "Multi-magit: couldn't find a repository here")
       (setq multi-magit-selected-repositories
             (cl-delete-duplicates
              (cl-merge 'list
@@ -242,7 +267,7 @@ would be empty."
   (interactive)
   (let ((repo (magit-toplevel directory)))
     (if (null repo)
-        (user-error "multi-magit: couldn't find a repository here.")
+        (user-error "Multi-magit: couldn't find a repository here")
       (setq multi-magit-selected-repositories
             (remove repo multi-magit-selected-repositories))
       (message "multi-magit: %s unselected." repo))))
@@ -380,7 +405,7 @@ would be empty."
 (defun multi-magit-git-command (command)
   "Execute COMMAND asynchronously for each selected repository.
 
-Interactively, prompt for COMMAND in the minibuffer. \"git \" is
+Interactively, prompt for COMMAND in the minibuffer.  \"git \" is
 used as initial input, but can be deleted to run another command.
 
 COMMAND is run in the top-level directory of each repository."
@@ -393,7 +418,7 @@ COMMAND is run in the top-level directory of each repository."
 (defun multi-magit-shell-command (command)
   "Execute COMMAND asynchronously for each selected repository.
 
-Interactively, prompt for COMMAND in the minibuffer. COMMAND is
+Interactively, prompt for COMMAND in the minibuffer.  COMMAND is
 run in the top-level directory of each repository."
   (interactive (list (read-shell-command "Shell command: "
                                          nil
@@ -419,7 +444,8 @@ Show S if there is at least one staged file."
           (if (magit-staged-files)    "S" "")))
 
 (defun multi-magit-repolist-column-repo (spec)
-  "Insert the identification of the repository."
+  "Insert the identification of the repository.
+SPEC is the column specification, whose :id is the repository's name."
   (propertize (cadr (assq :id spec)) 'font-lock-face 'multi-magit-repolist-repo-face))
 
 (defcustom multi-magit-repolist-columns
@@ -541,7 +567,7 @@ repositories are displayed."
   "Local keymap for Multi-Magit-Branchlist mode buffers.")
 
 (easy-menu-define multi-magit-branchlist-mode-menu multi-magit-branchlist-mode-map
-  "multi-magit-branchlist-mode menu."
+  "Menu for `multi-magit-branchlist-mode'."
   '("Multi-Magit Branches"
     ["Checkout" multi-magit-branchlist-checkout t]
     ["Delete"   multi-magit-branchlist-delete t]
@@ -595,8 +621,8 @@ repositories are displayed."
   (tabulated-list-init-header))
 
 (defun multi-magit-branchlist-checkout ()
-  "Checkout branch at point in its respective repositories. Point
-`multi-magit-selected-repositories' to these repositories."
+  "Checkout the branch at point in its respective repositories.
+Also set `multi-magit-selected-repositories' to these repositories."
   (interactive)
   (cl-destructuring-bind (&optional branch &rest repos)
       (tabulated-list-get-id)
@@ -620,7 +646,7 @@ repositories are displayed."
       (--when-let (--filter (let ((default-directory it))
                               (string= (magit-get-current-branch) branch))
                             repos)
-        (user-error "Refusing to delete. `%s' is currently checked out in %s"
+        (user-error "Refusing to delete: `%s' is currently checked out in %s"
                     branch repo-names))
       (when (yes-or-no-p (format "Delete `%s' in %s? " branch repo-names))
         (tabulated-list-delete-entry)
@@ -784,6 +810,9 @@ because `magit-mode-get-buffers' includes it.")
 (add-hook 'magit-post-refresh-hook 'multi-magit--maybe-refresh)
 
 (defun multi-magit--set-current-repo ()
+  "Set `default-directory' to the repository at point.
+If point is not in a repository's section, use the first selected
+repository."
   (let ((repo (or (multi-magit--current-repo)
                   (cl-first multi-magit-selected-repositories))))
     (setq default-directory repo)
@@ -792,6 +821,8 @@ because `magit-mode-get-buffers' includes it.")
 ;; Similar to `magit-list-repos-uniquify' but the resulting alist maps
 ;; repo paths to repo names not the other way around.
 (defun multi-magit--uniquify-repo-names (alist)
+  "Return an alist mapping repo paths to unique repo names.
+ALIST maps repo names to repo paths."
   (let ((result nil)
         (name->repos (make-hash-table :test 'equal)))
     (cl-loop for (name . repo) in alist
@@ -844,6 +875,8 @@ This is the refresh function of `multi-magit-status-mode', which
                     (magit-run-section-hook 'multi-magit-status-sections-hook))))))
 
 (defun multi-magit--refresh-status (buffer &optional created)
+  "Refresh the `multi-magit-status' BUFFER.
+CREATED is non-nil when BUFFER was just created."
   (with-current-buffer buffer
     (multi-magit--set-current-repo)
     ;; As for any Magit buffer: besides inserting the sections,
@@ -853,9 +886,11 @@ This is the refresh function of `multi-magit-status-mode', which
 
 ;;;###autoload
 (defun multi-magit-status ()
+  "Show the status of all selected repositories in a single buffer.
+The repositories are those in `multi-magit-selected-repositories'."
   (interactive)
   (if (null multi-magit-selected-repositories)
-      (when (y-or-n-p "`multi-magit-selected-repositories' is empty. Would you \
+      (when (y-or-n-p "`multi-magit-selected-repositories' is empty.  Would you \
 like to select some using `multi-magit-list-repositories'? ")
         (multi-magit-list-repositories))
     (let* ((buffer (get-buffer-create multi-magit-status-buffer-name))
@@ -874,9 +909,7 @@ like to select some using `multi-magit-list-repositories'? ")
 
 ;;;; Magit-status Sections
 
-;;; Implicitly used by (magit-insert-section (multi-magit-repo ...) ...)
-;;; in `multi-magit-insert-repos-overview'.
-(defvar magit-multi-magit-repo-section-map
+(defvar multi-magit-repo-section-map
   (let ((map (make-sparse-keymap)))
     (unless (featurep 'jkl)
       (define-key map "\C-j"   'multi-magit-repo-visit))
@@ -884,6 +917,13 @@ like to select some using `multi-magit-list-repositories'? ")
     (define-key map [remap magit-visit-thing] 'multi-magit-repo-visit)
     map)
   "Keymap for `multi-magit-repo' sections.")
+
+(defclass multi-magit-repo-section (magit-section)
+  ((keymap :initform 'multi-magit-repo-section-map))
+  "A section for a repository in `multi-magit-insert-repos-overview'.")
+
+(setf (alist-get 'multi-magit-repo magit--section-type-alist)
+      'multi-magit-repo-section)
 
 (defun multi-magit-repo-visit (repo &optional _other-window)
   "Visit REPO by calling `magit-status' on it."
