@@ -605,9 +605,11 @@ repositories are displayed."
                           (elt cols 2))))
     (tabulated-list-print-entry id new-cols)))
 
+(defvar x-stretch-cursor)
+
 (define-derived-mode multi-magit-branchlist-mode tabulated-list-mode "Branches"
   "Major mode for managing the list of selected Git repositories."
-  (setq x-stretch-cursor        nil)
+  (setq-local x-stretch-cursor  nil)
   (setq tabulated-list-padding  0)
   (setq tabulated-list-sort-key (cons "Branch" nil))
   (setq tabulated-list-format
